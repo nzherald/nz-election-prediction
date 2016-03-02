@@ -1,0 +1,11 @@
+An Explanation of Vote Ratios
+
+Vote ratios are the ratio of the percentage of party vote received by a party in a
+given electorate to the percentage of vote received in that type of electorate (general
+or Maori)
+
+The Single Year Maori v General Party Vote shows the ratio for a given party for a given
+year
+
+N.B. For the Green Party and Alliance there was not a clear difference and so the total
+vote share was used
