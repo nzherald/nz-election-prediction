@@ -56,7 +56,7 @@ RestB14.df <-filter(CandidateB14.df, !is.na(`Vote to Use`))
 
 # First Time Model --------------------------------------------------------
 
-FirstTimers.fit <- glm(`Candidate Vote`~`Party Vote Electorate`, data = NewCand.df)
+FirstTimers.fit <- glm(log(`Candidate Vote`)~`Party Vote Electorate`, data = NewCand.df)
 plot(FirstTimers.fit, which = 1:6)
 
 # Two issues - Nat running in Ohariu in 02 after not 99 (perhaps just hard code all Ohariu will see after next model)
@@ -64,38 +64,27 @@ plot(FirstTimers.fit, which = 1:6)
 
 ## FIX ## Will be to remove these two as likely won't be required again unless Gareth Morgan runs in which case will use a model similar to planned model for the Maori Electorates
 
-FirstTimers.fit1 <- glm(`Candidate Vote`~`Party Vote Electorate`, data = NewCand.df[-c(146, 191),])
+## FIX ## 02/06 changed response to log now have to deal with Green party. Will use + Party as an all poss regs with CV + PV *1000 indicates best -> Also using a log party vote term because should be all log
+
+FirstTimers.fit1 <- glm(log(`Candidate Vote`)~log(`Party Vote Electorate`)+Party, data = NewCand.df[-c(146, 191),])
 plot(FirstTimers.fit1, which = 1:6)
-
-# Still a couple of low votes namely Act 2008 Botany and Conservative 2011 Botany but can't be dealt with
-
-# See if worthwhile fitting non-linear PVE term
-plot(`Candidate Vote`~`Party Vote Electorate`, data = NewCand.df[-c(146,191),])
-abline(lm(NewCand.df[-c(146,191),]$`Candidate Vote`~NewCand.df[-c(146,191),]$`Party Vote Electorate`), col="red")
-lines(lowess(NewCand.df[-c(146,191),]$`Candidate Vote`~NewCand.df[-c(146,191),]$`Party Vote Electorate`), col="blue")
-
-# Perhaps but not enough data points
-FirstTimers.fit2 <- glm(`Candidate Vote`~`Party Vote Electorate`+I(`Party Vote Electorate`^2), data = NewCand.df[-c(146, 191),])
-plot(FirstTimers.fit2, which = 1:6)
-
-# Testing shows increases AIC slightly for not a significant decrease in residual deviance also significantly increases the influence of one point significantly - therefore will remain with linear model
-
-
 
 # General Use Model -------------------------------------------------------
 
 ### EDIT 31/05: Added *Party as term b/c is important - see Caleb's analysis from last year
 
-allpossregs(`Candidate Vote`~`Party Vote Electorate`*Party+`Vote to Use`*(`Same Electorate`+`Same Candidate`+`Same Party`)+Incumbent, data = RestB14.df)
+allpossregs(log(`Candidate Vote`*10000)~I(`Party Vote Electorate`*10000)*Party+I(`Vote to Use`*10000)*(`Same Electorate`+`Same Candidate`+`Same Party`)+Incumbent, data = RestB14.df)
 
 # Now dropping stuff not imp:
 
-allpossregs(`Candidate Vote`~`Party Vote Electorate`*Party+`Vote to Use`+Incumbent, data = RestB14.df)
+allpossregs(log(`Candidate Vote`*10000)~I(`Party Vote Electorate`*10000)*Party+I(`Vote to Use`*10000)+Incumbent, data = RestB14.df)
+
+# Note the *10000 in both of above is to ensure that the response is positive so that all poss regs works
 
 # Going to re do this once dropped the points which cause issues
 
 # Best Model Using Cross Validation
-Candidate.fit <- glm(`Candidate Vote`~`Party Vote Electorate`+`Vote to Use`+`Vote to Use` + `Incumbent`, data = RestB14.df)
+Candidate.fit <- glm(log(`Candidate Vote`)~`Party Vote Electorate`*Party+`Vote to Use` + `Incumbent`, data = RestB14.df)
 plot(Candidate.fit, which = 1:6)
 
 # Three issues - Dunne 1999 misses by 26% points b/c low party vote, Nat cand Epsom 2008 overshoots by 40% b/c given to Act, 2011 Act Epsom misses by 19% bc low party vote 
@@ -115,7 +104,7 @@ Epsom.df <- rbind(Epsom08.df, Epsom11.df)
 RestB14.df <- setdiff(RestB14.df, Ohariu.df)
 RestB14.df <- setdiff(RestB14.df, Epsom.df)
 
-Candidate.fit1 <- glm(`Candidate Vote`~`Party Vote Electorate`+`Vote to Use`+`Vote to Use` + `Incumbent`, data = RestB14.df)
+Candidate.fit1 <- glm(log(`Candidate Vote`)~`Party Vote Electorate`*Party+`Vote to Use`+`Vote to Use` + `Incumbent`, data = RestB14.df)
 plot(Candidate.fit1, which = 1:6)
 
 # Jim Anderton causes issues - can solve the 2002 Alliance candidate by treating them as a first timer but still Jim is a pain. Perhaps I'll have to hard code Wigram 02-08?
@@ -124,49 +113,26 @@ plot(Candidate.fit1, which = 1:6)
 
 RestB14.df <- RestB14.df[-c(1534:1555),]
 
-### Edit 31/05 Rerunning the allpossregs with Party Interactions
-
-allpossregs(`Candidate Vote`~`Party Vote Electorate`*Party+`Vote to Use`+Incumbent, data = RestB14.df)
-
-# Can't really tell whether + or * Party is better so going to see which predicts 2014 better. * Term only sig for NZF but both resdual deviance and AIC decrease. Also won't use the suggested model from allposs regs where it is +Party (exc. Alliance) + *(Green and NZF) as not best practice to only use interactions on some levels.
-
-Candidate.fit2 <- glm(`Candidate Vote`~`Party Vote Electorate`*Party+`Vote to Use`+`Vote to Use` + `Incumbent`, data = RestB14.df)
+Candidate.fit2 <- glm(log(`Candidate Vote`)~`Party Vote Electorate`*Party+`Vote to Use` + `Incumbent`, data = RestB14.df)
 plot(Candidate.fit2, which = 1:6)
 
-Candidate.fit3 <- glm(`Candidate Vote`~`Party Vote Electorate`+Party+`Vote to Use`+`Vote to Use` + `Incumbent`, data = RestB14.df)
+# Again Normal Q-Q not perfect perhaps Log of Party vote and vote to use?
+
+# Both
+
+Candidate.fit3 <- glm(log(`Candidate Vote`)~log(`Party Vote Electorate`)*Party+log(`Vote to Use`) + `Incumbent`, data = RestB14.df)
 plot(Candidate.fit3, which = 1:6)
 
-# Normal Q-Q not great for either perhaps add some quadratic terms?
+# Party Only
 
-allpossregs(`Candidate Vote`~(`Party Vote Electorate`+I(`Party Vote Electorate`^2))*Party+`Vote to Use`+I(`Vote to Use`^2)+Incumbent, data = RestB14.df)
-
-# CV Suggests adding a quadratic term for party vote but don't know what to do about interaction so going to fit all the models!
-
-# 4: * both PV and PV^2, 5: only +, 6: *PV^2, 7: *PV
-
-Candidate.fit4 <- glm(`Candidate Vote`~(`Party Vote Electorate`+I(`Party Vote Electorate`^2))*Party+`Vote to Use`+`Vote to Use` + `Incumbent`, data = RestB14.df)
+Candidate.fit4 <- glm(log(`Candidate Vote`)~log(`Party Vote Electorate`)*Party+`Vote to Use` + `Incumbent`, data = RestB14.df)
 plot(Candidate.fit4, which = 1:6)
-influenceplots(Candidate.fit4)
 
-# Kind of broke for Progressive + Maori...
+# Vote to use only
 
-Candidate.fit5 <- glm(`Candidate Vote`~(`Party Vote Electorate`+I(`Party Vote Electorate`^2))+Party+`Vote to Use`+`Vote to Use` + `Incumbent`, data = RestB14.df)
+Candidate.fit6 <- glm(log(`Candidate Vote`)~`Party Vote Electorate`*Party+log(`Vote to Use`) + `Incumbent`, data = RestB14.df)
 plot(Candidate.fit5, which = 1:6)
-influenceplots(Candidate.fit5)
 
-# Not that broken
-
-Candidate.fit6 <- glm(`Candidate Vote`~`Party Vote Electorate`+I(`Party Vote Electorate`^2)*Party+`Vote to Use`+`Vote to Use` + `Incumbent`, data = RestB14.df)
-plot(Candidate.fit6, which = 1:6)
-influenceplots(Candidate.fit6)
-
-# Jim Anderton Wigram 1999 just messes with the system might have to drop him and redo the interaction models
-
-Candidate.fit7 <- glm(`Candidate Vote`~`Party Vote Electorate`*Party+I(`Party Vote Electorate`^2)+`Vote to Use`+`Vote to Use` + `Incumbent`, data = RestB14.df)
-plot(Candidate.fit7, which = 1:6)
-influenceplots(Candidate.fit7)
-
-# Again Normal Q-Q not great and many high leverage points
 # In the Interaction models Jim Anderton 1999 and Winston 2002 spanners but probably won't drop Winnie although considering removing Jim although to be fair the Alliance values don't matter any more so may just leave him
 
 # Lots of this is Mangere - a labour strong hold where party vote + cand vote is very high. Will not worry about leverage normality is slightly concerning - for now willn just leave it and hope that the co-variance calculations will solve all woes
@@ -175,26 +141,32 @@ influenceplots(Candidate.fit7)
 
 # Issue with the Party terms is that for first time Parties such as Mana and Conservative in 2014 will have to figure this out
 
+# 03/06 Appears that the log- log +log model is the best based on AIC and residual deviance. Will therefore use this model (3)
+
+# Model which use + Party rather than * Party for Mana + Conservative
+
+Candidate.fit5 <- glm(log(`Candidate Vote`)~log(`Party Vote Electorate`)+Party+log(`Vote to Use`) + `Incumbent`, data = RestB14.df)
+plot(Candidate.fit5, which = 1:6)
+
 # Individual Electorate Models --------------------------------------------
 
 # Ohariu
-allpossregs(`Candidate Vote`~`Party Vote Electorate`+`Vote to Use`+I(`Party Vote Electorate`^2)+I(`Vote to Use`^2)+Incumbent, data = Ohariu.df)
-Ohariu.fit <- glm(`Candidate Vote`~`Party Vote Electorate`+`Vote to Use`+Incumbent, data = Ohariu.df)
-Ohariu.fit1 <- glm(`Candidate Vote`~`Party Vote Electorate`+I(`Party Vote Electorate`^2)+`Vote to Use`+Incumbent, data = Ohariu.df)
-Ohariu.fit2 <-glm(`Candidate Vote`~I(`Vote to Use`^2)+`Vote to Use`, data = Ohariu.df)
 
-# Three possible models for Ohariu going to see which predicts 2014 the best and use that one
+## N.B. On 03/06 did analysis to see if should use log candidate vote and log explanatory -> however b/c small samples and strange distributions doesn't work therefore went to a model which only has log response
+
+allpossregs(log(`Candidate Vote`*1000)~`Party Vote Electorate`+`Vote to Use`+Incumbent+I(`Party Vote Electorate`^2)+I(`Vote to Use`^2), data = Ohariu.df)
+
+Ohariu.fit <- glm(log(`Candidate Vote`)~`Party Vote Electorate`+`Vote to Use`+I(`Party Vote Electorate`^2)+I(`Vote to Use`^2)+Incumbent, data = Ohariu.df)
 
 # Epsom 08+11
-Epsom.df <- mutate(Epsom.df, ACT = if(Party=="ACT") TRUE else FALSE)
-Epsom.df <- mutate(Epsom.df, National = if(Party=="ACT") TRUE else FALSE)
-# Above two rows don't work so just using to make new column now making the values correct
-Epsom.df[5,16] <- TRUE
-Epsom.df[8,16] <- TRUE
-Epsom.df[3,17] <- TRUE
-Epsom.df[9,17] <- TRUE
+Epsom.df <- mutate(Epsom.df, ACT = c(FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE))
+Epsom.df <- mutate(Epsom.df, National = c(FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE))
 
-Epsom.fit <- glm(`Candidate Vote`~`Party Vote Electorate`+`Vote to Use`+ACT+National, data = Epsom.df)
+# all poss regs not working therefore doing this by hand
+
+Epsom.fit <- glm(log(`Candidate Vote`)~log(`Party Vote Electorate`)+ACT+National+log(`Vote to Use`), data = Epsom.df)
+Epsom.fit1 <- glm(log(`Candidate Vote`)~log(`Party Vote Electorate`)+ACT+National, data = Epsom.df)
+Epsom.fit2 <- glm(log(`Candidate Vote`)~log(`Party Vote Electorate`)+ACT, data = Epsom.df)
 
 # Not great but hopefully works for 2014
 
@@ -223,23 +195,10 @@ Epsom14.df[4,17] <- TRUE
 
 # Ohariu + Epsom 2014 -----------------------------------------------------
 
-# Testing Ohariu
-
-ModelOne <- predict.glm(Ohariu.fit, Ohariu14.df)
-ModelTwo <- predict.glm(Ohariu.fit1, Ohariu14.df)
-ModelThree <- predict.glm(Ohariu.fit2, Ohariu14.df)
-
-# RMSEPs and in case of negative value assume 0
-RMSEPONE <- sqrt(((ModelOne[1]-Ohariu14.df[1,5])^2+(ModelOne[2]-Ohariu14.df[2,5])^2+(0-Ohariu14.df[3,5])^2+(ModelOne[4]-Ohariu14.df[4,5])^2+(ModelOne[5]-Ohariu14.df[5,5])^2+(ModelOne[6]-Ohariu14.df[6,5])^2)/6)
-RMSEPTWO <- sqrt(((ModelTwo[1]-Ohariu14.df[1,5])^2+(ModelTwo[2]-Ohariu14.df[2,5])^2+(0-Ohariu14.df[3,5])^2+(0-Ohariu14.df[4,5])^2+(ModelTwo[5]-Ohariu14.df[5,5])^2+(ModelTwo[6]-Ohariu14.df[6,5])^2)/6)
-RMSEPTHREE <- sqrt(((ModelThree[1]-Ohariu14.df[1,5])^2+(ModelThree[2]-Ohariu14.df[2,5])^2+(0-Ohariu14.df[3,5])^2+(0-Ohariu14.df[4,5])^2+(ModelThree[5]-Ohariu14.df[5,5])^2+(ModelThree[6]-Ohariu14.df[6,5])^2)/6)
-
-# ModelThree is the best and will be used for 2017 (will need to figure out how to deal with Green not running a candidate though...)
-
-Ohariu14.df <- mutate(Ohariu14.df, Pred = predict.glm(Ohariu.fit2, Ohariu14.df))
+Ohariu14.df <- mutate(Ohariu14.df, Pred = exp(predict.glm(Ohariu.fit, Ohariu14.df)))
 
 # Testing Epsom
-Epsom14.df <- mutate(Epsom14.df, Pred = predict.glm(Epsom.fit, Epsom14.df))
+Epsom14.df <- mutate(Epsom14.df, Pred = exp(predict.glm(Epsom.fit2, Epsom14.df)))
 
 
 # First Timers 2014 -------------------------------------------------------
@@ -249,7 +208,7 @@ Epsom14.df <- mutate(Epsom14.df, Pred = predict.glm(Epsom.fit, Epsom14.df))
 New14.df <- filter(RestA14.df, is.na(`Vote to Use`))
 RestA14.df <- setdiff(RestA14.df, New14.df)
 
-New14.df <- mutate(New14.df, Pred = predict.glm(FirstTimers.fit2, New14.df))
+New14.df <- mutate(New14.df, Pred = exp(predict.glm(FirstTimers.fit1, New14.df)))
 
 ## FIX ## for Mana and Conservative going to use a simple estimte from the first time last election where their Party value is + the margin of missing. This will be used for all models
 
@@ -258,63 +217,33 @@ New14.df <- mutate(New14.df, Pred = predict.glm(FirstTimers.fit2, New14.df))
 # Seperating Conservative and Mana
 
 Conservative.df <- filter(RestA14.df, Party == "Conservative Party")
-Mana.df <- filter(RestA14.df, Party == "Internet MANA")
+Mana.df <- filter(RestA14.df, Party == "Mana")
 RestA14.df <- setdiff(RestA14.df, Conservative.df)
 RestA14.df <- setdiff(RestA14.df, Mana.df)
 
 # Calculating Constants 
 
 Conservative11.df <- filter(NewCand.df, Party == "Conservative Party")
-ConservativeE11 <- mean(Conservative11.df$`Candidate Vote`-predict.glm(FirstTimers.fit2, Conservative11.df))
+ConservativeE11 <- mean(Conservative11.df$`Candidate Vote`-exp(predict.glm(FirstTimers.fit1, Conservative11.df)))
 
 Mana11.df <- filter(NewCand.df, Party == "Mana")
-ManaE11 <- mean(Mana11.df$`Candidate Vote`-predict.glm(FirstTimers.fit2, Mana11.df))
+ManaE11 <- mean(Mana11.df$`Candidate Vote`-exp(predict.glm(FirstTimers.fit1, Mana11.df)))
 
 # Now predicting values - N.B. formula used is the from Candidate fit 5 + errors
 
-Conservative.df <- mutate(Conservative.df, Pred = Candidate.fit5$coef[1]+ConservativeE11+Candidate.fit5$coef[2]*`Party Vote Electorate`+Candidate.fit5$coef[3]*I(`Party Vote Electorate`^2)+Candidate.fit5$coef[12]*`Vote to Use`)
+Conservative.df <- mutate(Conservative.df, Pred = exp(Candidate.fit5$coef[1]+Candidate.fit5$coef[2]*log(`Party Vote Electorate`)+Candidate.fit5$coef[11]*log(`Vote to Use`))+ConservativeE11)
 
-Mana.df <- mutate(Mana.df, Pred = Candidate.fit5$coef[1]+ManaE11+Candidate.fit5$coef[2]*`Party Vote Electorate`+Candidate.fit5$coef[3]*I(`Party Vote Electorate`^2)+Candidate.fit5$coef[12]*`Vote to Use`)
+Mana.df <- mutate(Mana.df, Pred = exp(Candidate.fit5$coef[1]+Candidate.fit5$coef[2]*log(`Party Vote Electorate`)+Candidate.fit5$coef[11]*log(`Vote to Use`))+ManaE11)
 
 # The Rest 2014 -----------------------------------------------------------
 
-# Predicting for each model followed by combine
+# Predicting for the model
 
-RestA14P.df <- mutate(RestA14.df, Pred = predict.glm(Candidate.fit4, RestA14.df))
+RestA14P.df <- mutate(RestA14.df, Pred = exp(predict.glm(Candidate.fit3, RestA14.df)))
 
 # Combining all for a 2014 master list
 
 Epsom14.df <- Epsom14.df[,-c(16:17)]
 Pred14.df <- bind_rows(RestA14P.df, New14.df, Epsom14.df, Ohariu14.df, Conservative.df, Mana.df)
 
-write.csv(Pred14.df, "Double Interaction.csv")
-
-# Next Model
-
-RestA14P.df <- mutate(RestA14.df, Pred = predict.glm(Candidate.fit5, RestA14.df))
-
-# Combining all for a 2014 master list
-
-Pred14.df <- bind_rows(RestA14P.df, New14.df, Epsom14.df, Ohariu14.df, Conservative.df, Mana.df)
-
-write.csv(Pred14.df, "Simple Addition.csv")
-
-# Next Model
-
-RestA14P.df <- mutate(RestA14.df, Pred = predict.glm(Candidate.fit6, RestA14.df))
-
-# Combining all for a 2014 master list
-
-Pred14.df <- bind_rows(RestA14P.df, New14.df, Epsom14.df, Ohariu14.df, Conservative.df, Mana.df)
-
-write.csv(Pred14.df, "Order 1 Interaction.csv")
-
-# Next Model
-
-RestA14P.df <- mutate(RestA14.df, Pred = predict.glm(Candidate.fit7, RestA14.df))
-
-# Combining all for a 2014 master list
-
-Pred14.df <- bind_rows(RestA14P.df, New14.df, Epsom14.df, Ohariu14.df, Conservative.df, Mana.df)
-
-write.csv(Pred14.df, "Order 2 Interaction.csv")
+write.csv(Pred14.df, "log~log+log.csv")
