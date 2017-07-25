@@ -1,0 +1,20 @@
+Candidate,Party,Year,Electorate,Candidate Vote,Party Vote Electorate,Vote to Use,Candidate Previous Vote,Previous Candidate Vote electorate,Same Candidate,Same Electorate,Same Party,Incumbent,No Candidate Run Last Election
+"PAPA, Rahui",Maori Party,2017,Hauraki-Waikato,,,0.227019499,,,FALSE,NA,NA,FALSE,FALSE
+"MAHUTA, Nanaia",Labour Party,2017,Hauraki-Waikato,,,0.615598886,,,TRUE,TRUE,TRUE,TRUE,FALSE
+"FOX, Marama ",Maori Party,2017,Ikaroa Rawhiti,,,0.182505513,,,FALSE,NA,NA,FALSE,FALSE
+"KEREKERE, Elizabeth",Green Party,2017,Ikaroa Rawhiti,,,0.100283524,,,FALSE,NA,NA,FALSE,FALSE
+"WHAITIRI, Meka ",Labour Party,2017,Ikaroa Rawhiti,,,0.462669327,,,FALSE,NA,NA,TRUE,FALSE
+"DAVIDSON, Marama ",Green Party,2017,Tamaki Makaurau,,,0.159322034,,,FALSE,NA,NA,FALSE,FALSE
+"HENARE, Peeni ",Labour Party,2017,Tamaki Makaurau,,,0.382733051,,,FALSE,NA,NA,TRUE,FALSE
+"TAURIAMA, Shane",Maori Party,2017,Tamaki Makaurau,,,0.308474576,,,FALSE,NA,NA,FALSE,FALSE
+"McDONALD, Jack Tautokai ",Green Party,2017,Te Tai Hauauru,,,0.153496245,,,TRUE,TRUE,TRUE,FALSE,FALSE
+"McKENZIE, Chris ",Maori Party,2017,Te Tai Hauauru,,,0.333968052,,,FALSE,NA,NA,FALSE,FALSE
+"RURAWHE, Adrian ",Labour Party,2017,Te Tai Hauauru,,,0.413413731,,,FALSE,NA,NA,TRUE,FALSE
+"DAVIS, Kelvin ",Labour Party,2017,Te Tai Tokerau,,,0.447304568,,,TRUE,TRUE,TRUE,TRUE,FALSE
+"HARAWIRA, Hone ",Mana,2017,Te Tai Tokerau,,,0.413018251,,,NA,TRUE,FALSE,FALSE,FALSE
+"RUDOLF, Godfrey",Green Party,2017,Te Tai Tokerau,,,,,,,,,FALSE,TRUE
+"REEDY-TAARE, Mei",Maori Party,2017,Te Tai Tonga,,,0.248525074,,,FALSE,NA,NA,FALSE,FALSE
+"TURIE, Metiria",Green Party,2017,Te Tai Tonga,,,0.161293721,,,TRUE,TRUE,TRUE,FALSE,FALSE
+"TIRIKATENE, Rino ",Labour Party,2017,Te Tai Tonga,,,0.42920354,,,TRUE,TRUE,TRUE,TRUE,FALSE
+"FLAVELL, Te Ururoa James ",Maori Party,2017,Waiariki,,,0.455613851,,,TRUE,TRUE,TRUE,TRUE,FALSE
+"COFFEY, Tamati",Labour Party,2017,Waiariki,,,0.273452256,,,FALSE,NA,NA,FALSE,FALSE
