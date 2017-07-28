@@ -37,7 +37,7 @@ Party17.df <- read_csv("Post Party for 17.csv")
 Candidate.df <- read_csv("General Election Candidate Data for 14.csv") # This is used to create the glms
 Candidate17.df <- read_csv("Candidate 17 DataFrame INCOMPLETE.csv")
 MEPartyVote.df <- read_csv("ME Party Polling Data.csv")
-GEPolls.df <- read_csv("PollsforGam.csv") #Ensure get updated
+GEPolls.df <- read_csv("Polls for 14pred.csv") #Replace
 DesignE.df <- read_csv("Design Effects pred 17.csv")
 NatPollE.df <- read_csv("Nat Error 17 pred.csv")
 NatECovar.df <- read_csv("Nat Poll E CoVariance 17 pred.csv")
@@ -54,8 +54,8 @@ MEPVCovar.df <- read_csv("MEPV Covariance 17 Pred.csv")
 MECCovar.df <- read_csv("MEC GLM Covar for 17.csv")
 MECandidate.df <- read_csv("Maori Electorate Candidate Data.csv")
 MECandidate17.df <- read_csv("Maori Candidate 17 INCOMPLETE.csv")
-MECPolls.df <- read_csv("Candidate Polling 17.csv") # Replace and update
-MEPartyPolls.df <- read_csv("ME Party Polling Data 17.csv") # Replace and update
+MECPolls.df <- read_csv("Candidate Polling 14.csv") # Replace
+MEPartyPolls.df <- read_csv("ME Party Polling Data 14.csv") # Replace
 MEResults.df <- read_csv("ME Results.csv")
 StoreSeats.df <- read_csv("Store Seats.csv")
 StoreElecSeats.df <- read_csv("Store Elec Seats.csv")
@@ -109,8 +109,7 @@ DesignEffect <- function(Design){
 
 # Function Calculating Weighted Average
 WeightAverage <- function(GEPolls){
-  GEPolls <- filter(GEPolls, Pollster!= "Election result")
-  GEPolls <- filter(GEPolls, `Release Days`<94)
+  GEPolls <- filter(GEPolls, Poll!= "Election result")
   GEPolls <- mutate(GEPolls, `Raw Weight` = exp(-log(2)*(`Days Before`-DaysTo)/(1.96+0.2*DaysTo)))
   GEPolls <- mutate(GEPolls, `Weight` = `Raw Weight`/sum(`Raw Weight`))
   # Applying weights to each column
@@ -125,32 +124,12 @@ WeightAverage <- function(GEPolls){
   assign("WeightAveSim.df", WeightAve, envir = globalenv())
 }
 
-TrendLineCalc <- function(GEPolls){
-  Party_list <- list(colnames(GEPolls[,c(4:dim(GEPolls)[2])]))
-  Muu = rep(0,dim(GEPolls)[2]-3)
-  SE = rep(0,dim(GEPolls)[2]-3)
-  CurMuu = rep(0,dim(GEPolls)[2]-3)
-  CurSE = rep(0,dim(GEPolls)[2]-3)
-  i = 1
-  while(i<=length(Party_list[[1]])){
-    Alpha <- select(GEPolls, contains(Party_list[[1]][i]))
-    Beta <- data.frame(Poll = GEPolls$Pollster, Vote = Alpha, Day = rep(max(GEPolls$`Days Before`), dim(Alpha)[1]) - GEPolls$`Days Before`)
-    Party.fit <- gam(log(Beta[,2])~s(as.numeric(Day)), data = Beta, weights = ifelse(Poll=="Election result", log((2286190+2356536+2257336+2405620)/4), 1))
-    Muu[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(GEPolls$`Days Before`)))
-    SE[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(GEPolls$`Days Before`)), se.fit = TRUE)$se.fit
-    CurMuu[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(GEPolls$`Days Before`)))
-    CurSE[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(GEPolls$`Days Before`)), se.fit = TRUE)$se.fit
-    i = i+1
-  }
-  Diff = rnorm(length(Muu), Muu, SE) - rnorm(length(CurMuu), CurMuu, CurSE)
-  assign("TrendAdjSim", Diff, envir = globalenv())
-}
+# Below should be adjusted so national polling erorr is calcualted as a multivariate object
 
 # Function estimating mean national polling error, and national polling error for the sim before applying it to the weighted average to get the adjusted polling average
-AdjustedAverage <- function(NatE, Design, WtAve, Polls, NatECovar, CoVar, TrendAdj){
+AdjustedAverage <- function(NatE, Design, WtAve, Polls, NatECovar, CoVar){
   NatE <- mutate(NatE, NatEMuuSim = rnorm(dim(NatE)[1], `Muu Nat Error`, `Muu SD`))
   Support <- cbind(WtAve,`Muu Nat Error` = NatE$NatEMuuSim)
-  Support$Wt.Ave <- Support$Wt.Ave + TrendAdj
   Support <- mutate(Support, `Nom SD` = sqrt(exp(Wt.Ave)*(1-exp(Wt.Ave))/(log(dim(Polls)[1]+1)*1000)))
   Support <- cbind(Support, DESim = sqrt(Design$DESim) )
   Support <- mutate(Support, `Nat E SD` = `Nom SD`*DESim)
@@ -613,8 +592,7 @@ while(NSim < MaxSims+1){
   HouseEffect(House = HouseEffects.df, GEPolls = GEPolls.df)
   WeightAverage(GEPolls = GEPollsSim.df)
   DesignEffect(Design = DesignE.df)
-  TrendLineCalc(GEPolls = GEPollsSim.df)
-  AdjustedAverage(NatE = NatPollE.df, Design = DesignSim.df, WtAve = WeightAveSim.df, Polls = GEPollsSim.df, NatECovar = NatECovar.df, CoVar = Covar.df, TrendAdj = TrendAdjSim)
+  AdjustedAverage(NatE = NatPollE.df, Design = DesignSim.df, WtAve = WeightAveSim.df, Polls = GEPollsSim.df, NatECovar = NatECovar.df, CoVar = Covar.df)
   STM(param = c(0.321,0.1), Electorates = Electorate17Data.df, Parties = Party17.df,  Adj = `Adjusted Party Vote.df`)
   CandPredict(Candidates = Candidate17.df, PartyVote = `STM Preds`, CandCovar = CandCovar.df, OhariuCovar = OhariuCovar.df)
   
