@@ -29,7 +29,7 @@ library(Matrix)
 
 # Data --------------------------------------------------------------------
 
-setwd("~/Election Prediction Model/2017 Simulation")
+setwd("~/Election Prediction Model/GIT 2017")
 
 HouseEffects.df <- read_csv("WtAve House Effects 17.csv")
 Electorate17Data.df <- read_csv("Electorate Data for STM FOR 17.csv")
@@ -160,6 +160,10 @@ AdjustedAverage <- function(NatE, Design, WtAve, Polls, NatECovar, CoVar, TrendA
   # Testing if sum(PV)>1
   if(sum(Support$`Adj Average`)>1){
     Support <- mutate(Support, `Adj Average` = `Adj Average`/sum(`Adj Average`))
+  }
+  # Testing if sum(PV)<0.95
+  if(sum(Support$`Adj Average`)<0.95){
+    Support <- mutate(Support, `Adj Average` = `Adj Average`*0.95/sum(`Adj Average`))
   }
   Adj <- Support[,c(1,9)]
   assign("Adjusted Party Vote.df", Adj, envir = globalenv())
@@ -570,14 +574,14 @@ ElectorateSeats <- function(Candidate, Seats, MSeats, TSeats){
   }
 
   Ewins <- rep(0, dim(MSeats)[1])
-  Ewins[2] <- 1
-  ifelse(runif(1,0,1)>(0.46/0.54), Ewins[3]<-1, Ewins[5]<-1)
+  Ewins[1] <- 1
+  ifelse(runif(1,0,1)>(0.46/0.54), Ewins[5]<-1, Ewins[4]<-1)
   ifelse(runif(1,0,1)>(0.38/0.62), Ewins[8]<-1, Ewins[7]<-1)
-  ifelse(runif(1,0,1)>(0.41/0.59),Ewins[10]<-1, Ewins[11]<-1)
-  ifelse(runif(1,0,1)>0.6, Ewins[12]<-1, Ewins[13]<-1)
-  ifelse(runif(1,0,1)>(0.43/0.57),Ewins[15]<-1, Ewins[17]<-1)
+  ifelse(runif(1,0,1)>(0.41/0.59),Ewins[11]<-1, Ewins[10]<-1)
+  ifelse(runif(1,0,1)>0.5, Ewins[13]<-1, Ewins[14]<-1)
+  ifelse(runif(1,0,1)>(0.43/0.57),Ewins[17]<-1, Ewins[16]<-1)
   ifelse(runif(1,0,1)>(0.455/0.545),Ewins[18]<-1, Ewins[19]<-1)
-  MSeats[,6] <- EWins 
+  MSeats[,6] <- Ewins 
  
   AllSeats <- rbind(Seats, MSeats)
   
@@ -605,9 +609,10 @@ TotalSeats <- function(ElectorateSeats, ListSeats){
 }
 
 # Simulations -------------------------------------------------------------
-DaysTo = 0
+DaysTo = 52
 NSim = 1
-MaxSims = 2
+MaxSims = 20
+ptm <- proc.time()
 while(NSim < MaxSims+1){
   # Calulating Nationwide Party Vote
   HouseEffect(House = HouseEffects.df, GEPolls = GEPolls.df)
@@ -649,7 +654,7 @@ while(NSim < MaxSims+1){
   
   NSim <- NSim+1
 }
-
+ptm - proc.time()
 # Write Up ----------------------------------------------------------------
 
 # The code below produces summary dfs which will be used in visualtion
@@ -661,7 +666,7 @@ upr = 0.95 # you can edit these to get which ever range you desire default at 90
 
 # Nationwide Party Vote - using median as middle value as believe its better but you can change to mean if you desire
 TotalPVSum.df <- StorePV.df[,c(1:2)]
-TotalPVSum.df <- mutate(TotalPVSum.df, `median` = median(StorePV.df[,c(3:(2+MaxSims))]))
+TotalPVSum.df <- mutate(TotalPVSum.df, `median` = apply(StorePV.df[,c(3:(2+MaxSims))], 1, median))
 TotalPVSum.df <- mutate(TotalPVSum.df, lowr = 0)
 TotalPVSum.df <- mutate(TotalPVSum.df, upr = 0)
 i = 1
@@ -673,53 +678,54 @@ while(i<=9){
 
 # Electorate Party Vote
 ElectoratePVSum.df <- StoreElecPV.df[,c(1:4)]
-ElectoratePVSum.df <- mutate(ElectoratePVSum.df, `median` = median(StoreElecPV.df[,c(5:(4+MaxSims))]))
+ElectoratePVSum.df <- mutate(ElectoratePVSum.df, `median` =  apply(StoreElecPV.df[,c(5:(4+MaxSims))], 1, median))
 ElectoratePVSum.df <- mutate(ElectoratePVSum.df, lowr = 0)
 ElectoratePVSum.df <- mutate(ElectoratePVSum.df, upr = 0)
 i = 1
 while(i<=dim(ElectoratePVSum.df)[1]){
-  ElectoratePVSum.df[i,4] <- sort(StoreElecPV.df[i,c(5:(4+MaxSims))], partial = MaxSims*lowr)[MaxSims*lowr]
-  ElectoratePVSum.df[i,5] <- sort(StoreElecPV.df[i,c(5:(4+MaxSims))], partial = MaxSims*upr)[MaxSims*upr]
+  ElectoratePVSum.df[i,6] <- sort(StoreElecPV.df[i,c(5:(4+MaxSims))], partial = MaxSims*lowr)[MaxSims*lowr]
+  ElectoratePVSum.df[i,7] <- sort(StoreElecPV.df[i,c(5:(4+MaxSims))], partial = MaxSims*upr)[MaxSims*upr]
   i = i+1
 }
 
 # Maori Electorate Party Vote
-MEPVSum.df <- StoreMEPV.df[,c(1:4)]
-MEPVSum.df <- mutate(MEPVSum.df, `median` = median(StoreMEPV.df[,c(5:(4+MaxSims))]))
-MEPVSum.df <- mutate(MEPVSum.df, lowr = 0)
-MEPVSum.df <- mutate(MEPVSum.df, upr = 0)
-i = 1
-while(i<=dim(MEPVSum.df)[1]){
-  MEPVSum.df[i,4] <- sort(StoreMEPV.df[i,c(5:(4+MaxSims))], partial = MaxSims*lowr)[MaxSims*lowr]
-  MEPVSum.df[i,5] <- sort(StoreMEPV.df[i,c(5:(4+MaxSims))], partial = MaxSims*upr)[MaxSims*upr]
-  i = i+1
-}
+#MEPVSum.df <- StoreMEPV.df[,c(1:4)]
+#MEPVSum.df <- mutate(MEPVSum.df, `median` =  apply(StoreMEPV.df[,c(5:(4+MaxSims))], 1, median))
+#MEPVSum.df <- mutate(MEPVSum.df, lowr = 0)
+#MEPVSum.df <- mutate(MEPVSum.df, upr = 0)
+#i = 1
+#while(i<=dim(MEPVSum.df)[1]){
+#  MEPVSum.df[i,6] <- sort(StoreMEPV.df[i,c(5:(4+MaxSims))], partial = MaxSims*lowr)[MaxSims*lowr]
+#  MEPVSum.df[i,7] <- sort(StoreMEPV.df[i,c(5:(4+MaxSims))], partial = MaxSims*upr)[MaxSims*upr]
+#  i = i+1
+#}
 
 # Candidate Vote Summary --------------------------------------------------
 
 CandSum.df <- StoreCand.df[,c(1:5)]
 
-CandSum.df <- mutate(CandSum.df, `median` = median(StoreCand.df[,c(6:(5+MaxSims))]))
+CandSum.df <- mutate(CandSum.df, `median` =  apply(StoreCand.df[,c(6:(5+MaxSims))], 1, median))
 CandSum.df <- mutate(CandSum.df, lowr = 0)
 CandSum.df <- mutate(CandSum.df, upr = 0)
 i = 1
 while(i<=dim(CandSum.df)[1]){
-  CandSum.df[i,4] <- sort(StoreCand.df[i,c(6:(5+MaxSims))], partial = MaxSims*lowr)[MaxSims*lowr]
-  CandSum.df[i,5] <- sort(StoreCand.df[i,c(6:(5+MaxSims))], partial = MaxSims*upr)[MaxSims*upr]
+  CandSum.df[i,7] <- sort(StoreCand.df[i,c(6:(5+MaxSims))], partial = MaxSims*lowr)[MaxSims*lowr]
+  CandSum.df[i,8] <- sort(StoreCand.df[i,c(6:(5+MaxSims))], partial = MaxSims*upr)[MaxSims*upr]
   i = i+1
 }
 
 MECandSum.df <- StoreMECand.df[,c(1:5)]
 
-MECandSum.df <- mutate(MECandSum.df, `median` = median(StoreMECand.df[,c(6:(5+MaxSims))]))
+MECandSum.df <- mutate(MECandSum.df, `median` =  0) # REMOVE ONCE HAVE PROPER INFO
+#MECandSum.df <- mutate(MECandSum.df, `median` =  apply(StoreMECand.df[,c(6:(5+MaxSims))], 1, median))
 MECandSum.df <- mutate(MECandSum.df, lowr = 0)
 MECandSum.df <- mutate(MECandSum.df, upr = 0)
-i = 1
-while(i<=dim(MECandSum.df)[1]){
-  MECandSum.df[i,4] <- sort(StoreMECand.df[i,c(6:(5+MaxSims))], partial = MaxSims*lowr)[MaxSims*lowr]
-  MECandSum.df[i,5] <- sort(StoreMECand.df[i,c(6:(5+MaxSims))], partial = MaxSims*upr)[MaxSims*upr]
-  i = i+1
-}
+#i = 1
+#while(i<=dim(MECandSum.df)[1]){
+#  MECandSum.df[i,7] <- sort(StoreMECand.df[i,c(6:(5+MaxSims))], partial = MaxSims*lowr)[MaxSims*lowr]
+#  MECandSum.df[i,8] <- sort(StoreMECand.df[i,c(6:(5+MaxSims))], partial = MaxSims*upr)[MaxSims*upr]
+#  i = i+1
+#}
 
 AllCandSum <- rbind(CandSum.df, MECandSum.df)
 AllCandSum <- mutate(AllCandSum, `% Win` = rowSums(StoreCandWin.df[,c(6:(5+MaxSims))])/MaxSims)
@@ -728,7 +734,7 @@ AllCandSum <- mutate(AllCandSum, `% Win` = rowSums(StoreCandWin.df[,c(6:(5+MaxSi
 # Seat Summary ------------------------------------------------------------
 
 SeatsSum.df <- StoreSeats.df[,c(1:2)]
-SeatsSum.df <- mutate(SeatsSum.df, `median` = median(StoreSeats.df[,c(3:(2+MaxSims))]))
+SeatsSum.df <- mutate(SeatsSum.df, `median` = apply(StoreSeats.df[,c(3:(2+MaxSims))], 1, median))
 SeatsSum.df <- mutate(SeatsSum.df, lowr = 0)
 SeatsSum.df <- mutate(SeatsSum.df, upr = 0)
 i = 1
@@ -739,7 +745,7 @@ while(i<=9){
 }
 
 ElecSeatsSum.df <- StoreElecSeats.df[,c(1:2)]
-ElecSeatsSum.df <- mutate(ElecSeatsSum.df, `median` = median(StoreElecSeats.df[,c(3:(2+MaxSims))]))
+ElecSeatsSum.df <- mutate(ElecSeatsSum.df, `median` = apply(StoreElecSeats.df[,c(3:(2+MaxSims))], 1, median))
 ElecSeatsSum.df <- mutate(ElecSeatsSum.df, lowr = 0)
 ElecSeatsSum.df <- mutate(ElecSeatsSum.df, upr = 0)
 i = 1
@@ -750,7 +756,7 @@ while(i<=9){
 }
 
 ListSeatsSum.df <- StoreListSeats.df[,c(1:2)]
-ListSeatsSum.df <- mutate(ListSeatsSum.df, `median` = median(StoreListSeats.df[,c(3:(2+MaxSims))]))
+ListSeatsSum.df <- mutate(ListSeatsSum.df, `median` = apply(StoreListSeats.df[,c(3:(2+MaxSims))], 1, median))
 ListSeatsSum.df <- mutate(ListSeatsSum.df, lowr = 0)
 ListSeatsSum.df <- mutate(ListSeatsSum.df, upr = 0)
 i = 1
@@ -761,8 +767,8 @@ while(i<=9){
 }
 # Misc Summary ------------------------------------------------------------
 
-FivePercent.df <- data.frame(Party = StorePV.df$Party, `% > 5%` = rowSums(StorePV.df[,c(3:(2+MaxSims))]>=0.05))
-HaveList.df <- data.frame(Party = StoreListSeats.df$Party, `% List` = rowSums(StoreListSeats.df[,c(3:(2+MaxSims))]>=1))
+FivePercent.df <- data.frame(Party = StorePV.df$Party, `% > 5%` = rowSums(StorePV.df[,c(3:(2+MaxSims))]>=0.05)/MaxSims)
+HaveList.df <- data.frame(Party = StoreListSeats.df$Party, `% List` = rowSums(StoreListSeats.df[,c(3:(2+MaxSims))]>=1)/MaxSims)
 
 # Previous Summary Files --------------------------------------------------
 
