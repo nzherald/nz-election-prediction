@@ -594,7 +594,7 @@ SaintLague <- function(PartyVote){
   SL <- PartyVote
   i = 1
   while(i<=119){
-    SLv <- SL$`Adj Average`/(2*i+1)
+    SLv <- SL$Adj.Average/(2*i+1)
     SL <- cbind(SL, SLv)
     i = i+1
   }
@@ -658,7 +658,7 @@ TotalSeats <- function(ElectorateSeats, ListSeats){
 # Simulations -------------------------------------------------------------
 DaysTo = 52
 NSim = 1
-MaxSims = 1000
+MaxSims = 20
 ptm <- proc.time()
 while(NSim < MaxSims+1){
   # Calulating Nationwide Party Vote
@@ -682,7 +682,7 @@ while(NSim < MaxSims+1){
   #MECWtAve(Polls = MECPolls.df, Cand = MECandidate17.df, param = c(23.07,0.1547))
   #MECProject(Cand = MECandidate17.df, WtAve = MECWtAvesim, Covar = MECCovar.df, Design = MEDECsim, PartyVote = MEPVSim, NatE = MECNatESim, NatECovar = MENateCandCoVar.df)
   
-  SaintLague(PartyVote = `AdjustedPartyVote.df`)
+  SaintLague(PartyVote = AdjustedPartyVote.df)
   ElectorateSeats(Candidate = CandSim, Seats = StoreCand1.df, MSeats = StoreMECand1.df, TSeats = StoreElecSeats1.df)
   ListSeats(TotalSeats = TotalSeatsSim, ElectorateSeats = ElecSeatsSim)
   TotalSeats(ElectorateSeats = ElecSeatsSim, ListSeats = ListSeatsSim)
@@ -690,8 +690,8 @@ while(NSim < MaxSims+1){
   StoreSeats.df <- cbind(StoreSeats.df, FinalSeatSims$Seats)
   StoreElecSeats.df <- cbind(StoreElecSeats.df, ElecSeatsSim$Seats)
   StoreListSeats.df <- cbind(StoreListSeats.df, ListSeatsSim$LSeats)
-  StorePV.df <- cbind(StorePV.df, `AdjustedPartyVote.df`$`Adj Average`)
-  StoreElecPV.df <- cbind(StoreElecPV.df, `STM Preds`$Pred)
+  StorePV.df <- cbind(StorePV.df, AdjustedPartyVote.df$Adj.Average)
+  StoreElecPV.df <- cbind(StoreElecPV.df, STMPreds$Pred)
   #StoreMEPV.df <- cbind(StoreMEPV.df, MEPVSim$Pred)
   CandSim <- arrange(CandSim, Electorate, Party)
   StoreCand.df <- cbind(StoreCand.df, CandSim$Pred)
