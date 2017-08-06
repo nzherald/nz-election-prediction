@@ -1,4 +1,4 @@
-Candidate,Party,Year,Electorate,Candidate Vote,Party Vote Electorate,Vote to Use,Candidate Previous Vote,Previous Candidate Vote electorate,Same Candidate,Same Electorate,Same Party,Incumbent,No Candidate Run Last Election
+Candidate,Party,Year,Electorate,Candidate.Vote,Party.Vote.Electorate,Vote.to.Use,Candidate Previous Vote,Previous Candidate Vote electorate,Same Candidate,Same Electorate,Same Party,Incumbent,No Candidate Run Last Election
 "ANDERSON, Josie Marama",New Zealand First Party,1999,Hauraki,0.145116397,0.1334,0.159389128,NA,NA,NA,NA,NA,FALSE,TRUE
 "JACKSON, Willie",Alliance,1999,Hauraki,0.093560223,0.0653,0.070900871,0.05905169,NA,NA,FALSE,TRUE,FALSE,TRUE
 "KAHI, George Tearoha",National Party,1999,Hauraki,0.042257085,0.0567,0.045429485,NA,NA,NA,NA,NA,FALSE,TRUE

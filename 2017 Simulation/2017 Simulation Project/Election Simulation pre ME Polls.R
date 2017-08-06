@@ -63,6 +63,7 @@ MECandidate17.df <- read_csv("Maori Candidate 17 INCOMPLETE.csv")
 MECPolls.df <- read_csv("Candidate Polling 17.csv") # Replace and update
 MEPartyPolls.df <- read_csv("ME Party Polling Data 17.csv") # Replace and update
 MEResults.df <- read_csv("ME Results.csv")
+MEPVPrePolls.df <- read_csv("MEPVforPrePolls.csv")
 StoreSeats.df <- read_csv("Store Seats.csv")
 StoreElecSeats.df <- read_csv("Store Elec Seats.csv")
 StoreListSeats.df <- read_csv("Store List Seats.csv")
@@ -414,7 +415,6 @@ MEPVWtAve <- function(Polls, Results, param){
     i = i +1
   }
   
-  # This is for calculating weighted average of other electorates
   Polls <- mutate(Polls, scaleF = log(Size)/log(Days.Before))
   Polls <- mutate(Polls, nonscalePVO = Party.Vote*scaleF)
   
@@ -427,11 +427,11 @@ MEPVWtAve <- function(Polls, Results, param){
     Results$Weight.Ave.Other[i] = sum(filter(Polls, Electorate != Results$Electorate[i]& Party == Results$Party[i])$nonscalePVO)/sum(filter(Polls, Electorate != Results$Electorate[i]& Party == Results$Party[i])$scaleF)
     i = i+1
   }
-  Results <- mutate(Results, Pred = param[1]*c1wt/(c1wt+c2wt)*Weight.Ave + param[2]*c2wt/(c1wt+c2wt)*Weight.Ave.Other + (1-param[1]*c1wt/(c1wt+c2wt)-param[2]*c2wt/(c1wt+c2wt))*`Prev Elec`)
+  Results <- mutate(Results, FWtAve = param[1]*c1wt/(c1wt+c2wt)*Weight.Ave + param[2]*c2wt/(c1wt+c2wt)*Weight.Ave.Other + (1-param[1]*c1wt/(c1wt+c2wt)-param[2]*c2wt/(c1wt+c2wt))*`Prev Elec`)
   
   Results <- filter(Results, Party != "Undecided/Not Stated")
-  Results$Pred[which(Results$Pred<0)] <- 0
-  Results <- Results %>% group_by(Electorate) %>% mutate(Pred = Pred/sum(Pred))
+  Results$FWtAve[which(Results$FWtAve<0)] <- 0
+  Results <- Results %>% group_by(Electorate) %>% mutate(FWtAve = FWtAve/sum(FWtAve))
 
   assign("MEPVWtAvesim", Results, envir = globalenv())
 }
@@ -440,14 +440,34 @@ MEPVfunc <- function(WtAve, Polls, NatE, DE, NatECovar){
   WtAve <- arrange(WtAve, Electorate, Party)
   WtAve <- filter(WtAve, Party != "Independent/Other")
   WtAve <- cbind(WtAve, MuuNatE = NatE$MuuNatESim)
-  WtAVe <- mutate(WtAve, Pred = 0)
+  WtAve <- mutate(WtAve, Pred = 0)
   i = 1
   while(i<=7){
     ElecPred <- WtAve[c((9*i-8):(9*i)),]
     ElecPred <- cbind(ElecPred, DE = DE$DesignSim)
-    ElecPred <- mutate(ElecPred, SD = DE*sqrt(Pred*(1-Pred)/(log(dim(Polls)[1]+1)*500)))
+    ElecPred <- mutate(ElecPred, SD = DE*sqrt(FWtAve*(1-FWtAve)/(log(dim(Polls)[1]+1)*500)))
     ElecPred <- mutate(ElecPred, NatESim = diag(rmvnorm(dim(ElecPred)[1], MuuNatE, SD%*%t(SD)*cov2cor(as.matrix(NatECovar[,-1])), method ="svd")))
-    ElecPred <- mutate(ElecPred, Pred = Pred-NatESim)
+    ElecPred <- mutate(ElecPred, Pred = FWtAve-NatESim)
+    ElecPred[ElecPred$Pred<0,]$Pred <- runif(dim(ElecPred[ElecPred$Pred<0,])[1],0,0.005)
+    ElecPred$Pred <- ElecPred$Pred/sum(ElecPred$Pred)
+    WtAve$Pred[c((9*i-8):(9*i))] <- ElecPred$Pred
+    i = i+1
+  }
+  assign("MEPVSim", WtAve, envir = globalenv())
+}
+
+MEPVfuncNoPolls <- function(WtAve, Polls, NatE, DE, NatECovar){
+  WtAve <- arrange(WtAve, Electorate, Party)
+  WtAve <- filter(WtAve, Party != "Independent/Other")
+  WtAve <- cbind(WtAve, MuuNatE = NatE$MuuNatESim)
+  WtAve <- mutate(WtAve, Pred = 0)
+  i = 1
+  while(i<=7){
+    ElecPred <- WtAve[c((9*i-8):(9*i)),]
+    ElecPred <- cbind(ElecPred, DE = DE$DesignSim)
+    ElecPred <- mutate(ElecPred, SD = DE*sqrt(FWtAve*(1-FWtAve)/500))
+    ElecPred <- mutate(ElecPred, NatESim = diag(rmvnorm(dim(ElecPred)[1], MuuNatE, SD%*%t(SD)*cov2cor(as.matrix(NatECovar[,-1])), method ="svd")))
+    ElecPred <- mutate(ElecPred, Pred = FWtAve-NatESim)
     ElecPred[ElecPred$Pred<0,]$Pred <- runif(dim(ElecPred[ElecPred$Pred<0,])[1],0,0.005)
     ElecPred$Pred <- ElecPred$Pred/sum(ElecPred$Pred)
     WtAve$Pred[c((9*i-8):(9*i))] <- ElecPred$Pred
@@ -584,6 +604,38 @@ MECProject <- function(Cand, WtAve, Covar, Design, PartyVote, NatE, NatECovar){
   }
   assign("MECandSim", Candsim, envir = globalenv())
 }
+
+# This is the same as above but ignores all the stuff to do with polling
+MECProjectNoPolls <- function(Cand, Covar, PartyVote){
+  PartyVote <- semi_join(PartyVote, Cand,  by = c("Party", "Electorate"))
+  PartyVote <- arrange(PartyVote, Electorate, Party)
+  Cand <- arrange(Cand, Electorate, Party)
+  Cand$Party.Vote.Electorate <- PartyVote$Pred
+  
+  CandFTN <- filter(Cand, is.na(Vote.to.Use))
+  CandPN <- setdiff(Cand, CandFTN)
+  CandFTN <- mutate(CandFTN, muuPred = predict.glm(NoPollFT.fit, CandFTN))
+  CandFTN <- mutate(CandFTN, se = predict.glm(NoPollFT.fit, CandFTN, se.fit = TRUE)$se.fit)
+  CandPN <- mutate(CandPN, muuPred  = predict.glm(NoPoll.fit1, CandPN))
+  CandPN <- mutate(CandPN, se  = predict.glm(NoPoll.fit1, CandPN, se.fit = TRUE)$se.fit)
+  Candsim <- rbind(CandPN, CandFTN)
+  Candsim <- mutate(Candsim, Pred = 0)
+  Candsim <- arrange(Candsim, Electorate, Party)
+  Electorate_List <- unique(Candsim$Electorate)
+  i = 1
+  k = 1
+  while(i<=length(Electorate_List)){
+    ElecPred <- filter(Candsim, Electorate == Electorate_List[i])
+    ElecCovar <- filter(Covar, Party %in% ElecPred$Party)
+    ElecCovar <- as.matrix(ElecCovar[,which(names(ElecCovar)%in%ElecCovar$Party)])
+    ElecPred <- mutate(ElecPred, Pred1 = exp(diag(rmvnorm(dim(ElecPred)[1], muuPred, se%*%t(se)*cov2cor(ElecCovar), method = "svd"))))
+    ElecPred$Pred1 <- ElecPred$Pred1/sum(ElecPred$Pred1)
+    Candsim$Pred[k:(k+dim(ElecPred)[1]-1)] <- ElecPred$Pred1
+    k = k+dim(ElecPred)[1]
+    i = i+1
+  }
+  assign("MECandSim", Candsim, envir = globalenv())
+}
 # Admin Functions ---------------------------------------------------------
 
 # Uses SaintLague formula to estimate number of electoral seats
@@ -606,8 +658,10 @@ SaintLague <- function(PartyVote){
 }
 
 # Counts electorate seats won
-# 1. Seperate by electorate and
-ElectorateSeats <- function(Candidate, Seats, MSeats, TSeats){
+# 1. Seperates by electorate and counts who has largest vote share
+# 2. Makes assumptions for who will maori electorate
+# 3. Counts for each party
+ElectorateSeats <- function(Candidate, Seats, MaoriCand, MSeats, TSeats){
   Candidate <- arrange(Candidate, Electorate, Party)
   i = 1
   j = 1
@@ -620,16 +674,18 @@ ElectorateSeats <- function(Candidate, Seats, MSeats, TSeats){
     j = j+dim(Elec)[1]
   }
 
-  Ewins <- rep(0, dim(MSeats)[1])
-  Ewins[1] <- 1
-  ifelse(runif(1,0,1)>(0.46/0.54), Ewins[5]<-1, Ewins[4]<-1)
-  ifelse(runif(1,0,1)>(0.38/0.62), Ewins[8]<-1, Ewins[7]<-1)
-  ifelse(runif(1,0,1)>(0.41/0.59),Ewins[11]<-1, Ewins[10]<-1)
-  ifelse(runif(1,0,1)>0.5, Ewins[13]<-1, Ewins[14]<-1)
-  ifelse(runif(1,0,1)>(0.43/0.57),Ewins[17]<-1, Ewins[16]<-1)
-  ifelse(runif(1,0,1)>(0.455/0.545),Ewins[18]<-1, Ewins[19]<-1)
-  MSeats[,6] <- Ewins 
- 
+  MaoriCand <- arrange(MaoriCand, Electorate, Party)
+  i = 1
+  j = 1
+  ME_List <- unique(MaoriCand$Electorate)
+  while(i<=7){
+    Elec <- filter(MaoriCand, Electorate == ME_List[i])
+    Elec <- mutate(Elec, Win = as.numeric(Pred == max(Pred)))
+    MSeats[j:(j+dim(Elec)[1]-1),6] <- Elec$Win
+    i = i+1
+    j = j+dim(Elec)[1]
+  }
+  
   AllSeats <- rbind(Seats, MSeats)
   
   i = 1
@@ -642,6 +698,7 @@ ElectorateSeats <- function(Candidate, Seats, MSeats, TSeats){
   assign("CandWinSim", AllSeats, envir = globalenv())
 }
 
+# Calculates list seats for each party but subtracting electorate from total, ensure that if list <0 , list = 0
 ListSeats <- function(TotalSeats, ElectorateSeats){
   ListSeats <- TotalSeats
   ListSeats <- cbind(ListSeats, ElecSeats = ElectorateSeats$Seats)
@@ -649,6 +706,7 @@ ListSeats <- function(TotalSeats, ElectorateSeats){
   assign("ListSeatsSim", ListSeats[,-c(2:3)], envir = globalenv())
 }
 
+# Stores all seats
 TotalSeats <- function(ElectorateSeats, ListSeats){
   TotalSeats <- ElectorateSeats
   TotalSeats$Seats <- ElectorateSeats$Seats + ListSeats$LSeats
@@ -660,8 +718,7 @@ DaysTo = 52
 NSim = 1
 MaxSims = 20
 ptm <- proc.time()
-while(NSim < MaxSims+1){
-  # Calulating Nationwide Party Vote
+while(NSim <= MaxSims){
   HouseEffect(House = HouseEffects.df, GEPolls = GEPolls.df)
   WeightAverage(GEPolls = GEPollsSim.df)
   DesignEffect(Design = DesignE.df)
@@ -670,34 +727,34 @@ while(NSim < MaxSims+1){
   STM(param = c(0.321,0.1), Electorates = Electorate17Data.df, Parties = Party17.df,  Adj = AdjustedPartyVote.df)
   CandPredict(Candidates = Candidate17.df, PartyVote = STMPreds, CandCovar = CandCovar.df, OhariuCovar = OhariuCovar.df)
   
-  # Maori Electorate
-  
-  #MEDEPV(Design = MEDesignE.df)
-  #MENatErrorPV(MEPVNatE = MENatE.df)
+  MEDEPV(Design = MEDesignE.df)
+  MENatErrorPV(MEPVNatE = MENatE.df)
   #MEPVWtAve(Polls = MEPartyPolls.df, Results = MEResults.df, param = MEparam)
-  #MEPVfunc(WtAve = MEPVWtAvesim, Polls =  MEPartyPolls.df, NatE = MEPVNatESim, DE = MEDEPVsim, NatECovar = MENateCoVar.df)
+  #MEPVfunc(WtAve = MEPVPrePolls.df, Polls =  MEPartyPolls.df, NatE = MEPVNatESim, DE = MEDEPVsim, NatECovar = MENateCoVar.df)
+  MEPVfuncNoPolls(WtAve = MEPVPrePolls.df, Polls =  MEPartyPolls.df, NatE = MEPVNatESim, DE = MEDEPVsim, NatECovar = MENateCoVar.df)
   
   #MEDEC(Design = MEDesignECand.df)
   #MENatErrorC(MECNatE = MENatECand.df)
-  #MECWtAve(Polls = MECPolls.df, Cand = MECandidate17.df, param = c(23.07,0.1547))
+  #MECWtAve(Polls = MECPolls.df, Cand = 0MECandidate17.df, param = c(23.07,0.1547))
   #MECProject(Cand = MECandidate17.df, WtAve = MECWtAvesim, Covar = MECCovar.df, Design = MEDECsim, PartyVote = MEPVSim, NatE = MECNatESim, NatECovar = MENateCandCoVar.df)
+  MECProjectNoPolls(Cand = MECandidate17.df, PartyVote = MEPVSim, Covar = MECCovar.df)
   
   SaintLague(PartyVote = AdjustedPartyVote.df)
-  ElectorateSeats(Candidate = CandSim, Seats = StoreCand1.df, MSeats = StoreMECand1.df, TSeats = StoreElecSeats1.df)
+  ElectorateSeats(Candidate = CandSim, Seats = StoreCand1.df, MaoriCand = MECandSim, MSeats = StoreMECand1.df, TSeats = StoreElecSeats1.df)
   ListSeats(TotalSeats = TotalSeatsSim, ElectorateSeats = ElecSeatsSim)
   TotalSeats(ElectorateSeats = ElecSeatsSim, ListSeats = ListSeatsSim)
-  # Store Files Addition
+
   StoreSeats.df <- cbind(StoreSeats.df, FinalSeatSims$Seats)
   StoreElecSeats.df <- cbind(StoreElecSeats.df, ElecSeatsSim$Seats)
   StoreListSeats.df <- cbind(StoreListSeats.df, ListSeatsSim$LSeats)
   StorePV.df <- cbind(StorePV.df, AdjustedPartyVote.df$Adj.Average)
   StoreElecPV.df <- cbind(StoreElecPV.df, STMPreds$Pred)
-  #StoreMEPV.df <- cbind(StoreMEPV.df, MEPVSim$Pred)
+  StoreMEPV.df <- cbind(StoreMEPV.df, MEPVSim$Pred)
   CandSim <- arrange(CandSim, Electorate, Party)
   StoreCand.df <- cbind(StoreCand.df, CandSim$Pred)
   StoreCandWin.df <- cbind(StoreCandWin.df, CandWinSim$V6)
-  #MECandSim <- arrange(MECandSim, Electorate, Party)
-  #StoreMECand.df <- cbind(StoreMECand.df, MECandSim$Pred)
+  MECandSim <- arrange(MECandSim, Electorate, Party)
+  StoreMECand.df <- cbind(StoreMECand.df, MECandSim$Pred)
   
   NSim <- NSim+1
 }
