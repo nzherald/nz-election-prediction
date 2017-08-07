@@ -1,0 +1,27 @@
+Abbreviation Definitions:
+
+Elec - Electorate
+GE - General Electorate
+ME - Maori Electorates
+MEC - Maori Electorate Candidate
+NatPollE - National Polling Error (occasionaly abbreviated as Nat E for National Error)
+CoVar - Covariance
+Cand - Candidate
+PV - Party Vote
+PVE - Party Vote Electorate
+DE - Design Effect* (Also abrrevuated as DesignE)
+SE/StdE - Standard Error
+Muu - Mean
+Wt Ave - Weighed Average
+Cur - Current
+Adj - Adjusted
+Sim - Simulation
+Nom - Nominal
+TChng - Total Change
+STM - Strong Transition Model
+
+
+When these are combined read together
+e.g. NatPollECovar read as (National Polling Error Covariance)
+
+* Design effect is a measure of how much added uncertainy needs to be accounted for when considering the margin of error of polls
