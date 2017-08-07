@@ -151,7 +151,7 @@ TrendLineCalc <- function(GEPolls){
     CurSE[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(Beta$Day)), se.fit = TRUE)$se.fit
     i = i+1
   }
-  Diff = rnorm(length(Muu), Muu, SE) - rnorm(length(CurMuu), CurMuu, CurSE)
+  Diff = (rnorm(length(Muu), Muu, SE) - rnorm(length(CurMuu), CurMuu, CurSE))/log(min(GEPolls$Days.Before)+1)
   assign("TrendAdjSim", Diff, envir = globalenv())
 }
 
@@ -857,6 +857,62 @@ ChangeFive.df <- FivePercent.df
 ChangeFive.df[,2] <- ChangeFive.df[,2] - PrevFive.df[,2]
 ChangeHaveList.df <- HaveList.df
 ChangeHaveList.df[,2] <- ChangeHaveList.df[,2] - PrevHaveList.df[,2]
+
+# Party Vote Calculation Explainer ----------------------------------------
+
+MuuHouseEffect <- function(House, GEPolls){
+  House <- mutate(House, SimEst = Estimate + Baseline)
+  House <- House[,-c(3:6)]
+  House <- spread(House, Party, SimEst)
+  PollInclude = unique(House$Pollster)
+  i = 1
+  while(i<=dim(GEPolls)[1]){
+    if(GEPolls[i,1] %in% PollInclude){
+      GEPolls[i,4:12] <- GEPolls[i,4:12] -  filter(House, Pollster  == as.character(GEPolls[i,1]))[,2:10]
+    }
+    i = i+1
+  }
+  GEPolls[,4:12][GEPolls[,4:12]<0.0005] <- 0.0005
+  assign("GEPollsMuu.df", GEPolls, envir = globalenv())
+}
+
+MuuWeightAverage <- function(GEPolls){
+  GEPolls <- filter(GEPolls, Pollster!= "Election result")
+  GEPolls <- filter(GEPolls, Release.Days<94)
+  GEPolls <- mutate(GEPolls, RawWeight = exp(-log(2)*(Days.Before-DaysTo)/(1.96+0.2*DaysTo)))
+  GEPolls <- mutate(GEPolls, Weight = RawWeight/sum(RawWeight))
+  GEPolls[,4:12] <- as.data.frame(apply(GEPolls[,4:12],2,function(x) x*GEPolls[,14]))
+  WeightAve <- data.frame(Party = colnames(GEPolls)[4:12], Wt.Ave = colSums(GEPolls[,c(4:12)]))
+  WeightAve$Wt.Ave <- log(WeightAve$Wt.Ave)
+  assign("MuuWeightAve.df", WeightAve, envir = globalenv())
+}
+
+MuuTrendLineCalc <- function(GEPolls){
+  Party_list <- list(colnames(GEPolls[,c(4:dim(GEPolls)[2])]))
+  Muu = rep(0,dim(GEPolls)[2]-3)
+  SE = rep(0,dim(GEPolls)[2]-3)
+  CurMuu = rep(0,dim(GEPolls)[2]-3)
+  CurSE = rep(0,dim(GEPolls)[2]-3)
+  i = 1
+  while(i<=length(Party_list[[1]])){
+    Alpha <- select(GEPolls, contains(Party_list[[1]][i]))
+    Beta <- data.frame(Poll = GEPolls$Pollster, Vote = Alpha, Day = rep(max(GEPolls$Days.Before), dim(Alpha)[1]) - GEPolls$Days.Before)
+    Party.fit <- gam(log(Beta[,2])~s(as.numeric(Day)), data = Beta, weights = ifelse(Poll=="Election result", log((2286190+2356536+2257336+2405620)/4), 1))
+    Muu[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(GEPolls$Days.Before)))
+    SE[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(GEPolls$Days.Before)), se.fit = TRUE)$se.fit
+    CurMuu[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(Beta$Day)))
+    CurSE[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(Beta$Day)), se.fit = TRUE)$se.fit
+    i = i+1
+  }
+  MuuDiff = (Muu - CurMuu)/log(min(GEPolls$Days.Before)+1)
+  assign("MuuTrendAdj", MuuDiff, envir = globalenv())
+}
+
+MuuHouseEffect(House = HouseEffects.df, GEPolls = GEPolls.df)
+MuuWeightAverage(GEPolls = GEPollsMuu.df)
+MuuTrendLineCalc(GEPolls = GEPollsMuu.df)
+
+PVExplain.df <- data.frame(Party = StorePV.df$Party, Weight.Average = exp(MuuWeightAve.df$Wt.Ave), Trendline.Adjustment = (exp(MuuWeightAve.df$Wt.Ave + MuuTrendAdj)-exp(MuuWeightAve.df$Wt.Ave)), National.Polling.Error.Estimate = (exp(MuuWeightAve.df$Wt.Ave + MuuTrendAdj)-exp(NatPollE.df$Muu*(MuuWeightAve.df$Wt.Ave + MuuTrendAdj))), median = StorePV.df$median)
 
 # csv Writers -------------------------------------------------------------
 
