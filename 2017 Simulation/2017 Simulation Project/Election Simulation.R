@@ -174,7 +174,7 @@ AdjustedAverage <- function(NatE, Design, WtAve, Polls, NatECovar, CoVar, TrendA
   Support <- mutate(Support, NatESD = NomSD*DESim)
   Support <- mutate(Support, logSD = sqrt(Wt.Ave^2*(exp(NatESD^2)-1)))
   Support <- cbind(Support, NatESim = diag(rmvnorm(dim(Support)[1],Support$MuuNatE, Support$logSD%*%t(Support$logSD)*cov2cor(as.matrix(NatECovar[,-1])), method = "svd")))
-  Support <- mutate(Support, Adj.Average = exp(diag(rmvnorm(dim(Support)[1], mean = Wt.Ave * NatESim, as.matrix(forceSymmetric(logSD%*%t(logSD)*cov2cor(as.matrix(CoVar[,-1])))), method = "svd"))))
+  Support <- mutate(Support, Adj.Average = exp(Wt.Ave * NatESim))
   if(sum(Support$Adj.Average)>1){
     Support <- mutate(Support, Adj.Average = Adj.Average/sum(Adj.Average))
   }
