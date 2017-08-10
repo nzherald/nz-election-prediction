@@ -714,9 +714,9 @@ TotalSeats <- function(ElectorateSeats, ListSeats){
 }
 
 # Simulations -------------------------------------------------------------
-DaysTo = 47
+DaysTo = 54
 NSim = 1
-MaxSims = 1000
+MaxSims = 10000
 ptm <- proc.time()
 while(NSim <= MaxSims){
   HouseEffect(House = HouseEffects.df, GEPolls = GEPolls.df)
@@ -793,16 +793,16 @@ while(i<=dim(ElectoratePVSum.df)[1]){
 }
 
 # Maori Electorate Party Vote
-#MEPVSum.df <- StoreMEPV.df[,c(1:4)]
-#MEPVSum.df <- mutate(MEPVSum.df, `median` =  apply(StoreMEPV.df[,c(5:(4+MaxSims))], 1, median))
-#MEPVSum.df <- mutate(MEPVSum.df, lowr = 0)
-#MEPVSum.df <- mutate(MEPVSum.df, upr = 0)
-#i = 1
-#while(i<=dim(MEPVSum.df)[1]){
-#  MEPVSum.df[i,6] <- sort(StoreMEPV.df[i,c(5:(4+MaxSims))], partial = MaxSims*lowr)[MaxSims*lowr]
-#  MEPVSum.df[i,7] <- sort(StoreMEPV.df[i,c(5:(4+MaxSims))], partial = MaxSims*upr)[MaxSims*upr]
-#  i = i+1
-#}
+MEPVSum.df <- StoreMEPV.df[,c(1:4)]
+MEPVSum.df <- mutate(MEPVSum.df, `median` =  apply(StoreMEPV.df[,c(4:(3+MaxSims))], 1, median))
+MEPVSum.df <- mutate(MEPVSum.df, lowr = 0)
+MEPVSum.df <- mutate(MEPVSum.df, upr = 0)
+i = 1
+while(i<=dim(MEPVSum.df)[1]){
+  MEPVSum.df[i,6] <- sort(StoreMEPV.df[i,c(4:(3+MaxSims))], partial = MaxSims*lowr)[MaxSims*lowr]
+  MEPVSum.df[i,7] <- sort(StoreMEPV.df[i,c(4:(3+MaxSims))], partial = MaxSims*upr)[MaxSims*upr]
+  i = i+1
+}
 
 # Candidate Vote Summary --------------------------------------------------
 
@@ -820,16 +820,15 @@ while(i<=dim(CandSum.df)[1]){
 
 MECandSum.df <- StoreMECand.df[,c(1:5)]
 
-MECandSum.df <- mutate(MECandSum.df, `median` =  0) # REMOVE ONCE HAVE PROPER INFO
-#MECandSum.df <- mutate(MECandSum.df, `median` =  apply(StoreMECand.df[,c(6:(5+MaxSims))], 1, median))
+MECandSum.df <- mutate(MECandSum.df, `median` =  apply(StoreMECand.df[,c(6:(5+MaxSims))], 1, median))
 MECandSum.df <- mutate(MECandSum.df, lowr = 0)
 MECandSum.df <- mutate(MECandSum.df, upr = 0)
-#i = 1
-#while(i<=dim(MECandSum.df)[1]){
-#  MECandSum.df[i,7] <- sort(StoreMECand.df[i,c(6:(5+MaxSims))], partial = MaxSims*lowr)[MaxSims*lowr]
-#  MECandSum.df[i,8] <- sort(StoreMECand.df[i,c(6:(5+MaxSims))], partial = MaxSims*upr)[MaxSims*upr]
-#  i = i+1
-#}
+i = 1
+while(i<=dim(MECandSum.df)[1]){
+  MECandSum.df[i,7] <- sort(StoreMECand.df[i,c(6:(5+MaxSims))], partial = MaxSims*lowr)[MaxSims*lowr]
+  MECandSum.df[i,8] <- sort(StoreMECand.df[i,c(6:(5+MaxSims))], partial = MaxSims*upr)[MaxSims*upr]
+  i = i+1
+}
 
 AllCandSum <- rbind(CandSum.df, MECandSum.df)
 AllCandSum <- mutate(AllCandSum, `% Win` = rowSums(StoreCandWin.df[,c(6:(5+MaxSims))])/MaxSims)
@@ -896,8 +895,8 @@ ChangePVSum.df <- TotalPVSum.df
 ChangePVSum.df[,c(3:5)] <- ChangePVSum.df[,c(3:5)] - PrevPVSum.df[,c(3:5)]
 ChangeElecPVSum.df <- ElectoratePVSum.df
 ChangeElecPVSum.df[,c(5:7)] <- ChangeElecPVSum.df[,c(5:7)] - PrevElecPVSum.df[,c(5:7)]
-#ChangeMEPVSum.df <- MEPVSum.df
-#ChangeMEPVSum.df[,c(5:7)] <- ChangeMEPVSum.df[,c(5:7)] - PrevMEPVSum.df[,c(5:7)]
+ChangeMEPVSum.df <- MEPVSum.df
+ChangeMEPVSum.df[,c(5:7)] <- ChangeMEPVSum.df[,c(5:7)] - PrevMEPVSum.df[,c(5:7)]
 ChangeCandSum.df <- AllCandSum
 ChangeCandSum.df[,c(6:9)] <- ChangeCandSum.df[,c(6:9)] - PrevCandSum.df[,c(6:9)]
 ChangeSeatSum.df <- SeatsSum.df
@@ -975,8 +974,8 @@ write.csv(TotalPVSum.df, "Simulated PV.csv")
 write.csv(ChangePVSum.df, "Change PV.csv")
 write.csv(ElectoratePVSum.df, "Simulated Electorate PV.csv")
 write.csv(ChangeElecPVSum.df, "Change Electorate PV.csv")
-#write.csv(MEPVSum.df, "Simulated ME PV.csv")
-#write.csv(ChangeMEPVSum.df, "Change ME PV.csv")
+write.csv(MEPVSum.df, "Simulated ME PV.csv")
+write.csv(ChangeMEPVSum.df, "Change ME PV.csv")
 write.csv(AllCandSum, "Simulated Candidate.csv")
 write.csv(ChangeCandSum.df, "Change Candidate.csv")
 write.csv(SeatsSum.df, "Simulated Seats.csv")
@@ -989,4 +988,4 @@ write.csv(FivePercent.df, "Simulated Five Threshold.csv")
 write.csv(ChangeFive.df, "Change Five Threshold.csv")
 write.csv(HaveList.df, "Simulated Have List.csv")
 write.csv(ChangeHaveList.df, "Change Have List.csv")
-  
+write.csv(PVExplain.df, "Explained Party Vote.csv")  
