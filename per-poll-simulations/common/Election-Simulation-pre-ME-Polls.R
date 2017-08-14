@@ -109,8 +109,8 @@ DesignEffect <- function(Design){
 # Function Calculating Weighted Average
 WeightAverage <- function(GEPolls){
   GEPolls <- filter(GEPolls, Pollster!= "Election result")
-  # GEPolls <- filter(GEPolls, `Release Days`<94)
-  GEPolls <-tail(GEPolls, 5)
+  GEPolls <- filter(GEPolls, `Release Days`<100)
+  # GEPolls <-tail(GEPolls, 5)
   GEPolls <- mutate(GEPolls, `Raw Weight` = exp(-log(2)*(`Days Before`-DaysTo)/(1.96+0.2*DaysTo)))
   GEPolls <- mutate(GEPolls, `Weight` = `Raw Weight`/sum(`Raw Weight`))
   # Applying weights to each column
@@ -150,7 +150,7 @@ TrendLineCalc <- function(GEPolls){
 AdjustedAverage <- function(NatE, Design, WtAve, Polls, NatECovar, CoVar, TrendAdj){
   NatE <- mutate(NatE, NatEMuuSim = rnorm(dim(NatE)[1], `Muu Nat Error`, `Muu SD`))
   Support <- cbind(WtAve,`Muu Nat Error` = NatE$NatEMuuSim)
-  Support$Wt.Ave <- pmin(Support$Wt.Ave + TrendAdj, 0)
+  Support$Wt.Ave <- Support$Wt.Ave + TrendAdj
   Support <- mutate(Support, `Nom SD` = sqrt(exp(Wt.Ave)*(1-exp(Wt.Ave))/(log(dim(Polls)[1]+1)*1000)))
   Support <- cbind(Support, DESim = sqrt(Design$DESim) )
   Support <- mutate(Support, `Nat E SD` = `Nom SD`*DESim)
@@ -811,17 +811,17 @@ ChangePVSum.df <- TotalPVSum.df
 
 write.csv(TotalPVSum.df, "Simulated PV.csv")
 # write.csv(ChangePVSum.df, "Change PV.csv")
-# write.csv(ElectoratePVSum.df, "Simulated Electorate PV.csv")
+write.csv(ElectoratePVSum.df, "Simulated Electorate PV.csv")
 # write.csv(ChangeElecPVSum.df, "Change Electorate PV.csv")
 # #write.csv(MEPVSum.df, "Simulated ME PV.csv")
 # #write.csv(ChangeMEPVSum.df, "Change ME PV.csv")
 # write.csv(AllCandSum, "Simulated Candidate.csv")
 # write.csv(ChangeCandSum.df, "Change Candidate.csv")
-# write.csv(SeatsSum.df, "Simulated Seats.csv")
+write.csv(SeatsSum.df, "Simulated Seats.csv")
 # write.csv(ChangeSeatSum.df, "Change Seats.csv")
-# write.csv(ElecSeatsSum.df, "Simulated Elec Seats.csv")
+write.csv(ElecSeatsSum.df, "Simulated Elec Seats.csv")
 # write.csv(ChangeElecSeatSum.df, "Change Elec Seats.csv")
-# write.csv(ListSeatsSum.df, "Simulated List Seats.csv")
+write.csv(ListSeatsSum.df, "Simulated List Seats.csv")
 # write.csv(ChangeListSeatSum.df, "Change List Seats.csv")
 # write.csv(FivePercent.df, "Simulated Five Threshold.csv")
 # write.csv(ChangeFive.df, "Change Five Threshold.csv")

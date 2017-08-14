@@ -4,4 +4,4 @@ set -e
 
 make
 
-cp 0045-reid-research/Simulated-PV.csv /output
+cp 0045-reid-research/*.csv /output
