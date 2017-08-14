@@ -5,7 +5,7 @@ import os
 
 
 config = '''
-MaxSims = 500
+MaxSims = 50
 DaysTo = %d
 '''
 
