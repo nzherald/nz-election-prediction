@@ -1,5 +1,4 @@
-polls := 0045-reid-research \
-	0060-colmar-brunton \
+polls := 0060-colmar-brunton \
 	0060-reid-research \
 	0082-colmar-brunton \
 	0110-reid-research \
@@ -27,6 +26,6 @@ latest: $(latest)/Simulated-PV.csv
 all-polls: $(addsuffix /Simulated-PV.csv,$(polls))
 
 %/Simulated-PV.csv: common/Election-Simulation-pre-ME-Polls.R %/config.R %/PollsForGam.csv
-	cd $* && Rscript ../$^ 2>error.txt
+	cd $* && Rscript ../$^ 
 
 

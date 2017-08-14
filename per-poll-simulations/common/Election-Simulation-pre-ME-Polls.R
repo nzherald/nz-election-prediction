@@ -142,7 +142,11 @@ TrendLineCalc <- function(GEPolls){
     CurSE[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(Beta$Day)), se.fit = TRUE)$se.fit
     i = i+1
   }
-  Diff = rnorm(length(Muu), Muu, SE) - rnorm(length(CurMuu), CurMuu, CurSE)
+  Diff = if (DaysTo < 70) {
+    rnorm(length(Muu), Muu, SE) - rnorm(length(CurMuu), CurMuu, CurSE)
+  } else {
+    rnorm(length(Muu), Muu, SE)
+  }
   assign("TrendAdjSim", Diff, envir = globalenv())
 }
 
@@ -150,7 +154,11 @@ TrendLineCalc <- function(GEPolls){
 AdjustedAverage <- function(NatE, Design, WtAve, Polls, NatECovar, CoVar, TrendAdj){
   NatE <- mutate(NatE, NatEMuuSim = rnorm(dim(NatE)[1], `Muu Nat Error`, `Muu SD`))
   Support <- cbind(WtAve,`Muu Nat Error` = NatE$NatEMuuSim)
-  Support$Wt.Ave <- Support$Wt.Ave + TrendAdj
+  if (DaysTo < 70) {
+    Support$Wt.Ave <- Support$Wt.Ave + TrendAdj
+  } else {
+    Support$Wt.Ave = TrendAdj
+  }
   Support <- mutate(Support, `Nom SD` = sqrt(exp(Wt.Ave)*(1-exp(Wt.Ave))/(log(dim(Polls)[1]+1)*1000)))
   Support <- cbind(Support, DESim = sqrt(Design$DESim) )
   Support <- mutate(Support, `Nat E SD` = `Nom SD`*DESim)
