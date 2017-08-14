@@ -29,6 +29,7 @@ library(Matrix)
 # Data --------------------------------------------------------------------
 GEPolls.df <- read_csv("PollsForGam.csv") #Ensure get updated
 source("config.R")
+UsePollsWithin100Days <- DaysTo < 70
 # setwd("~/Election Prediction Model/GIT 2017")
 
 HouseEffects.df <- read_csv("../common/WtAve House Effects 17.csv")
@@ -142,7 +143,7 @@ TrendLineCalc <- function(GEPolls){
     CurSE[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(Beta$Day)), se.fit = TRUE)$se.fit
     i = i+1
   }
-  Diff = if (DaysTo < 70) {
+  Diff = if (UsePollsWithin100Days) {
     rnorm(length(Muu), Muu, SE) - rnorm(length(CurMuu), CurMuu, CurSE)
   } else {
     rnorm(length(Muu), Muu, SE)
@@ -154,12 +155,13 @@ TrendLineCalc <- function(GEPolls){
 AdjustedAverage <- function(NatE, Design, WtAve, Polls, NatECovar, CoVar, TrendAdj){
   NatE <- mutate(NatE, NatEMuuSim = rnorm(dim(NatE)[1], `Muu Nat Error`, `Muu SD`))
   Support <- cbind(WtAve,`Muu Nat Error` = NatE$NatEMuuSim)
-  if (DaysTo < 70) {
+  if (UsePollsWithin100Days) {
     Support$Wt.Ave <- Support$Wt.Ave + TrendAdj
+    Support <- mutate(Support, `Nom SD` = sqrt(exp(Wt.Ave)*(1-exp(Wt.Ave))/(log(dim(Polls)[1]+1)*1000)))
   } else {
     Support$Wt.Ave = TrendAdj
+    Support <- mutate(Support, `Nom SD` = sqrt(exp(Wt.Ave)*(1-exp(Wt.Ave))/(log(3)*1000)))
   }
-  Support <- mutate(Support, `Nom SD` = sqrt(exp(Wt.Ave)*(1-exp(Wt.Ave))/(log(dim(Polls)[1]+1)*1000)))
   Support <- cbind(Support, DESim = sqrt(Design$DESim) )
   Support <- mutate(Support, `Nat E SD` = `Nom SD`*DESim)
   Support <- mutate(Support, `log SD` = sqrt(Wt.Ave^2*(exp(`Nat E SD`^2)-1)))
