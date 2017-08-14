@@ -20,9 +20,11 @@ polls := dummy\
 	0342-roy-morgan \
 
 
-.PHONY: all
+.PHONY: all-polls latest
 
-all: $(addsuffix /Simulated-PV.csv,$(polls))
+latest: 0045-reid-research/Simulated-PV.csv
+
+all-polls: $(addsuffix /Simulated-PV.csv,$(polls))
 
 %/Simulated-PV.csv: common/Election-Simulation-pre-ME-Polls.R %/config.R %/PollsForGam.csv
 	cd $* && Rscript ../$^ 2>error.txt
