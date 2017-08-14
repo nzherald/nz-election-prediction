@@ -1,4 +1,5 @@
-polls := 0045-reid-research \
+polls := dummy\
+	0045-reid-research \
 	0060-colmar-brunton \
 	0060-reid-research \
 	0082-colmar-brunton \
