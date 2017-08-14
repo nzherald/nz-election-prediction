@@ -18,10 +18,11 @@ polls := 0045-reid-research \
 	0320-roy-morgan \
 	0342-roy-morgan \
 
+latest := $(shell ls  | head -n1)
 
 .PHONY: all-polls latest
 
-latest: 0045-reid-research/Simulated-PV.csv
+latest: $(latest)/Simulated-PV.csv
 
 all-polls: $(addsuffix /Simulated-PV.csv,$(polls))
 

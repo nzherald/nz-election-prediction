@@ -3,4 +3,4 @@ set -e
 
 make
 
-cp -r * /output
+cp -r $(ls  | head -n1)/*.{csv,txt} /output
