@@ -157,6 +157,7 @@ AdjustedAverage <- function(NatE, Design, WtAve, Polls, NatECovar, CoVar, TrendA
   Support <- cbind(WtAve,`Muu Nat Error` = NatE$NatEMuuSim)
   if (UsePollsWithin100Days) {
     Support$Wt.Ave <- Support$Wt.Ave + TrendAdj
+    Support$Wt.Ave <- pmin(Support$Wt.Ave,0)
     Support <- mutate(Support, `Nom SD` = sqrt(exp(Wt.Ave)*(1-exp(Wt.Ave))/(log(dim(Polls)[1]+1)*1000)))
   } else {
     Support$Wt.Ave = pmin(TrendAdj,0)
