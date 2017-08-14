@@ -27,7 +27,7 @@ library(mvtnorm)
 library(Matrix)
 
 # Data --------------------------------------------------------------------
-GEPolls.df <- read_csv("PollsforGam.csv") #Ensure get updated
+GEPolls.df <- read_csv("PollsForGam.csv") #Ensure get updated
 source("config.R")
 # setwd("~/Election Prediction Model/GIT 2017")
 
@@ -39,7 +39,7 @@ Candidate17.df <- read_csv("../common/Candidate 17 DataFrame INCOMPLETE.csv")
 # MEPartyVote.df <- read_csv("ME Party Polling Data 17.csv")
 DesignE.df <- read_csv("../common/Design Effects pred 17.csv")
 NatPollE.df <- read_csv("../common/Nat Error 17 pred.csv")
-NatECovar.df <- read_csv("../common/Nat Poll E CoVariance 17 pred.csv")
+NatECovar.df <- read_csv("../common/Nat Poll E CoVariance 17 Pred.csv")
 Covar.df <- read_csv("../common/CoVariance ln 17 Pred.csv")
 OhariuCovar.df <- read_csv("../common/Ohariu CoVar 17.csv")
 CandCovar.df <- read_csv("../common/Candidate CoVariance 17 Pred.csv")
@@ -110,7 +110,7 @@ DesignEffect <- function(Design){
 WeightAverage <- function(GEPolls){
   GEPolls <- filter(GEPolls, Pollster!= "Election result")
   # GEPolls <- filter(GEPolls, `Release Days`<94)
-  GEPolls <- tail(GEPolls, 5)
+  GEPolls <-tail(GEPolls, 5)
   GEPolls <- mutate(GEPolls, `Raw Weight` = exp(-log(2)*(`Days Before`-DaysTo)/(1.96+0.2*DaysTo)))
   GEPolls <- mutate(GEPolls, `Weight` = `Raw Weight`/sum(`Raw Weight`))
   # Applying weights to each column
@@ -447,7 +447,7 @@ NoPoll.fit1 <- glm(`Candidate Vote`~log(`Vote to Use`)+log(`Party Vote Electorat
 
 NoPollFT.fit <- glm(`Candidate Vote`~log(`Party Vote Electorate`), family = gaussian(log), data = MENoPollsFT.df)
 
-MEYesPolls.df <- read_csv("../Common/Maori Cand with PV.csv")
+MEYesPolls.df <- read_csv("../common/Maori Cand with PV.csv")
 MEYesPollsFT.df <- filter(MEYesPolls.df, is.na(`Vote to Use`))
 MEYesPolls.df <- setdiff(MEYesPolls.df, MEYesPollsFT.df)
 
