@@ -1,3 +1,3 @@
 
-MaxSims = 50
+MaxSims = 5000
 DaysTo = 257
