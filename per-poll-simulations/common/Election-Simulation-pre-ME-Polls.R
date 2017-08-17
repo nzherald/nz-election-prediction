@@ -556,7 +556,7 @@ SaintLague <- function(PartyVote){
   SL <- PartyVote
   i = 1
   while(i<=199){
-    SLv <- SL$`Adj Average`/(2*i+1)
+    SLv <- SL$Adj.Average/(2*i+1)
     SL <- cbind(SL, SLv)
     i = i+1
   }
