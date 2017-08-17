@@ -138,28 +138,20 @@ TrendLineCalc <- function(GEPolls){
 
 # Function estimating mean national polling error, and national polling error for the sim before applying it to the weighted average to get the adjusted polling average
 AdjustedAverage <- function(NatE, Design, WtAve, Polls, NatECovar, CoVar, TrendAdj){
-  NatE <- mutate(NatE, NatEMuuSim = rnorm(dim(NatE)[1], `Muu Nat Error`, `Muu SD`))
-  Support <- cbind(WtAve,`Muu Nat Error` = NatE$NatEMuuSim)
-  if (UsePollsWithin100Days) {
-    Support$Wt.Ave <- Support$Wt.Ave + TrendAdj
-    Support$Wt.Ave <- pmin(Support$Wt.Ave,0)
-    Support <- mutate(Support, `Nom SD` = sqrt(exp(Wt.Ave)*(1-exp(Wt.Ave))/(log(dim(Polls)[1]+1)*1000)))
-  } else {
-    Support$Wt.Ave = pmin(TrendAdj,0)
-    Support <- mutate(Support, `Nom SD` = sqrt(exp(Wt.Ave)*(1-exp(Wt.Ave))/(log(3)*1000)))
-  }
+  NatE <- mutate(NatE, NatEMuuSim = rnorm(dim(NatE)[1], Muu, SD))
+  Support <- cbind(WtAve, MuuNatE = NatE$NatEMuuSim)
+  Support$Wt.Ave <- Support$Wt.Ave + TrendAdj
+  Support <- mutate(Support, NomSD = sqrt(exp(Wt.Ave)*(1-exp(Wt.Ave))/(log(dim(Polls)[1]+1)*1000)))
   Support <- cbind(Support, DESim = sqrt(Design$DESim) )
-  Support <- mutate(Support, `Nat E SD` = `Nom SD`*DESim)
-  Support <- mutate(Support, `log SD` = sqrt(Wt.Ave^2*(exp(`Nat E SD`^2)-1)))
-  Support <- cbind(Support, `Nat E Sim` = diag(rmvnorm(dim(Support)[1],Support$`Muu Nat Error`, Support$`log SD`%*%t(Support$`log SD`)*cov2cor(as.matrix(NatECovar[,-1])), method = "svd")))
-  Support <- mutate(Support, `Adj Average` = exp(diag(rmvnorm(dim(Support)[1], mean = Wt.Ave * `Nat E Sim`, as.matrix(forceSymmetric(`log SD`%*%t(`log SD`)*cov2cor(as.matrix(CoVar[,-1])))), method = "svd")))) # Code is filthy because machine precision
-  # Testing if sum(PV)>1
-  if(sum(Support$`Adj Average`)>1){
-    Support <- mutate(Support, `Adj Average` = `Adj Average`/sum(`Adj Average`))
+  Support <- mutate(Support, NatESD = NomSD*DESim)
+  Support <- mutate(Support, logSD = sqrt(Wt.Ave^2*(exp(NatESD^2)-1)))
+  Support <- cbind(Support, NatESim = diag(rmvnorm(dim(Support)[1],Support$MuuNatE, Support$logSD%*%t(Support$logSD)*cov2cor(as.matrix(NatECovar[,-1])), method = "svd")))
+  Support <- mutate(Support, Adj.Average = exp(Wt.Ave * NatESim))
+  if(sum(Support$Adj.Average)>1){
+    Support <- mutate(Support, Adj.Average = Adj.Average/sum(Adj.Average))
   }
-  # Testing if sum(PV)<0.95
-  if(sum(Support$`Adj Average`)<0.95){
-    Support <- mutate(Support, `Adj Average` = `Adj Average`*0.95/sum(`Adj Average`))
+  if(sum(Support$Adj.Average)<0.95){
+    Support <- mutate(Support, Adj.Average = Adj.Average*0.95/sum(Adj.Average))
   }
   Adj <- Support[,c(1,9)]
   assign("AdjustedPartyVote.df", Adj, envir = globalenv())
