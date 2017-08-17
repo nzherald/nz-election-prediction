@@ -44,19 +44,20 @@ NatECovar.df <- read_csv("../common/Nat Poll E CoVariance 17 Pred.csv")
 Covar.df <- read_csv("../common/CoVariance ln 17 Pred.csv")
 OhariuCovar.df <- read_csv("../common/Ohariu CoVar 17.csv")
 CandCovar.df <- read_csv("../common/Candidate CoVariance 17 Pred.csv")
-# MEDesignE.df <- read_csv("ME Party DE.csv")
-# MENatE.df <- read_csv("MEPVNatPolling Error.csv")
-# MENateCoVar.df <- read_csv("MEPV Covariance.csv")
-# MEDesignECand.df <- read_csv("ME Candidate DE.csv")
-# MENatECand.df <- read_csv("MECNatPolling Error.csv")
-# MENateCandCoVar.df <- read_csv("MEC NatE Covariance.csv")
-# MEPVCovar.df <- read_csv("MEPV Covariance 17 Pred.csv")
-# MECCovar.df <- read_csv("MEC GLM Covar for 17.csv")
+MEDesignE.df <- read_csv("../common/ME Party DE.csv")
+MENatE.df <- read_csv("../common/MEPVNatPolling Error.csv")
+MENateCoVar.df <- read_csv("../common/MEPV Covariance.csv")
+MEDesignECand.df <- read_csv("../common/ME Candidate DE.csv")
+MENatECand.df <- read_csv("../common/MECNatPolling Error.csv")
+MENateCandCoVar.df <- read_csv("../common/MEC NatE Covariance.csv")
+MEPVCovar.df <- read_csv("../common/MEPV Covariance 17 Pred.csv")
+MECCovar.df <- read_csv("../common/MEC GLM Covar for 17.csv")
 MECandidate.df <- read_csv("../common/Maori Electorate Candidate Data.csv")
-# MECandidate17.df <- read_csv("Maori Candidate 17 INCOMPLETE.csv")
-# MECPolls.df <- read_csv("Candidate Polling 17.csv") # Replace and update
-# MEPartyPolls.df <- read_csv("ME Party Polling Data 17.csv") # Replace and update
-# MEResults.df <- read_csv("ME Results.csv")
+MECandidate17.df <- read_csv("../common/Maori Candidate 17 INCOMPLETE.csv")
+MECPolls.df <- read_csv("../common/Candidate Polling 17.csv") # Replace and update
+MEPartyPolls.df <- read_csv("../common/ME Party Polling Data 17.csv") # Replace and update
+MEResults.df <- read_csv("../common/ME Results.csv")
+MEPVPrePolls.df <- read_csv("../common/MEPVforPrePolls.csv")
 StoreSeats.df <- read_csv("../common/Store Seats.csv")
 StoreElecSeats.df <- read_csv("../common/Store Elec Seats.csv")
 StoreListSeats.df <- read_csv("../common/Store List Seats.csv")
@@ -101,8 +102,8 @@ DesignEffect <- function(Design){
 # Function Calculating Weighted Average
 WeightAverage <- function(GEPolls){
   GEPolls <- filter(GEPolls, Pollster!= "Election result")
-  GEPolls <- filter(GEPolls, Release.Days<100)
-  GEPolls <- mutate(GEPolls, RawWeight = exp(-log(2)*(Days.Before-DaysTo)/(1.96+0.2*DaysTo)))
+  GEPolls <- filter(GEPolls, `Release Days`<100)
+  GEPolls <- mutate(GEPolls, RawWeight = exp(-log(2)*(`Days Before`-DaysTo)/(1.96+0.2*DaysTo)))
   GEPolls <- mutate(GEPolls, Weight = RawWeight/sum(RawWeight))
   GEPolls[,4:12] <- as.data.frame(apply(GEPolls[,4:12],2,function(x) x*GEPolls[,14]))
   WeightAve <- data.frame(Party = colnames(GEPolls)[4:12], Wt.Ave = colSums(GEPolls[,c(4:12)]))
@@ -119,16 +120,16 @@ TrendLineCalc <- function(GEPolls){
   i = 1
   while(i<=length(Party_list[[1]])){
     Alpha <- select(GEPolls, contains(Party_list[[1]][i]))
-    Beta <- data.frame(Poll = GEPolls$Pollster, Vote = Alpha, Day = rep(max(GEPolls$Days.Before), dim(Alpha)[1]) - GEPolls$Days.Before)
+    Beta <- data.frame(Poll = GEPolls$Pollster, Vote = Alpha, Day = rep(max(GEPolls$`Days Before`), dim(Alpha)[1]) - GEPolls$`Days Before`)
     Party.fit <- gam(log(Beta[,2])~s(as.numeric(Day)), data = Beta, weights = ifelse(Poll=="Election result", log((2286190+2356536+2257336+2405620)/4), 1))
-    Muu[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(GEPolls$Days.Before)))
-    SE[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(GEPolls$Days.Before)), se.fit = TRUE)$se.fit
+    Muu[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(GEPolls$`Days Before`)))
+    SE[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(GEPolls$`Days Before`)), se.fit = TRUE)$se.fit
     CurMuu[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(Beta$Day)))
     CurSE[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(Beta$Day)), se.fit = TRUE)$se.fit
     i = i+1
   }
   Diff = if (UsePollsWithin100Days) {
-    Diff = (rnorm(length(Muu), Muu, SE) - rnorm(length(CurMuu), CurMuu, CurSE))/log(min(GEPolls$Days.Before)+1)
+    Diff = (rnorm(length(Muu), Muu, SE) - rnorm(length(CurMuu), CurMuu, CurSE))/log(min(GEPolls$`Days Before`)+1)
   } else {
     rnorm(length(Muu), Muu, SE)
   }
@@ -161,7 +162,7 @@ AdjustedAverage <- function(NatE, Design, WtAve, Polls, NatECovar, CoVar, TrendA
     Support <- mutate(Support, `Adj Average` = `Adj Average`*0.95/sum(`Adj Average`))
   }
   Adj <- Support[,c(1,9)]
-  assign("Adjusted Party Vote.df", Adj, envir = globalenv())
+  assign("AdjustedPartyVote.df", Adj, envir = globalenv())
 }
 
 # Strong Transition Electorate Projector ----------------------------------
@@ -422,7 +423,7 @@ MEPVfuncNoPolls <- function(WtAve, Polls, NatE, DE, NatECovar){
 
 MECandidate.df <- filter(MECandidate.df, Year!=1996)
 MENoPolls.df <- filter(MECandidate.df, Year<2003)
-MENoPollsFT.df <- filter(MENoPolls.df, is.na(`Vote to Use`))
+MENoPollsFT.df <- filter(MENoPolls.df, is.na(`Vote.to.Use`))
 MENoPolls.df <- setdiff(MENoPolls.df, MENoPollsFT.df)
 
 NoPoll.fit1 <- glm(Candidate.Vote~log(Vote.to.Use)+log(Party.Vote.Electorate), family = gaussian(log), data = MENoPolls.df)
@@ -430,7 +431,7 @@ NoPoll.fit1 <- glm(Candidate.Vote~log(Vote.to.Use)+log(Party.Vote.Electorate), f
 NoPollFT.fit <- glm(Candidate.Vote~log(Party.Vote.Electorate), family = gaussian(log), data = MENoPollsFT.df)
 
 MEYesPolls.df <- read_csv("../common/Maori Cand with PV.csv")
-MEYesPollsFT.df <- filter(MEYesPolls.df, is.na(`Vote to Use`))
+MEYesPollsFT.df <- filter(MEYesPolls.df, is.na(`Vote.to.Use`))
 MEYesPolls.df <- setdiff(MEYesPolls.df, MEYesPollsFT.df)
 
 MEYES.fit <- glm(Candidate.Vote~log(Vote.to.Use) + log(Party.Vote.Electorate)+ log(PollAve)+Incumbent, family = gaussian(log), data = MEYesPolls.df)
@@ -839,8 +840,8 @@ MuuHouseEffect <- function(House, GEPolls){
 
 MuuWeightAverage <- function(GEPolls){
   GEPolls <- filter(GEPolls, Pollster!= "Election result")
-  GEPolls <- filter(GEPolls, Release.Days<94)
-  GEPolls <- mutate(GEPolls, RawWeight = exp(-log(2)*(Days.Before-DaysTo)/(1.96+0.2*DaysTo)))
+  GEPolls <- filter(GEPolls, `Release Days`<94)
+  GEPolls <- mutate(GEPolls, RawWeight = exp(-log(2)*(`Days Before`-DaysTo)/(1.96+0.2*DaysTo)))
   GEPolls <- mutate(GEPolls, Weight = RawWeight/sum(RawWeight))
   GEPolls[,4:12] <- as.data.frame(apply(GEPolls[,4:12],2,function(x) x*GEPolls[,14]))
   WeightAve <- data.frame(Party = colnames(GEPolls)[4:12], Wt.Ave = colSums(GEPolls[,c(4:12)]))
@@ -857,15 +858,15 @@ MuuTrendLineCalc <- function(GEPolls){
   i = 1
   while(i<=length(Party_list[[1]])){
     Alpha <- select(GEPolls, contains(Party_list[[1]][i]))
-    Beta <- data.frame(Poll = GEPolls$Pollster, Vote = Alpha, Day = rep(max(GEPolls$Days.Before), dim(Alpha)[1]) - GEPolls$Days.Before)
+    Beta <- data.frame(Poll = GEPolls$Pollster, Vote = Alpha, Day = rep(max(GEPolls$`Days Before`), dim(Alpha)[1]) - GEPolls$`Days Before`)
     Party.fit <- gam(log(Beta[,2])~s(as.numeric(Day)), data = Beta, weights = ifelse(Poll=="Election result", log((2286190+2356536+2257336+2405620)/4), 1))
-    Muu[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(GEPolls$Days.Before)))
-    SE[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(GEPolls$Days.Before)), se.fit = TRUE)$se.fit
+    Muu[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(GEPolls$`Days Before`)))
+    SE[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(GEPolls$`Days Before`)), se.fit = TRUE)$se.fit
     CurMuu[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(Beta$Day)))
     CurSE[i] <- predict.gam(Party.fit, newdata = data.frame(Pollster = "Election Result", Day = max(Beta$Day)), se.fit = TRUE)$se.fit
     i = i+1
   }
-  MuuDiff = (Muu - CurMuu)/log(min(GEPolls$Days.Before)+1)
+  MuuDiff = (Muu - CurMuu)/log(min(GEPolls$`Days Before`)+1)
   assign("MuuTrendAdj", MuuDiff, envir = globalenv())
 }
 

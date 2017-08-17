@@ -1,4 +1,4 @@
-Candidate,Party,Year,Electorate,Candidate.Vote,Party.Vote.Electorate,Vote.to.Use,Incumbent
+Candidate,Party,Year,Electorate,Candidate Vote,Party Vote Electorate,Vote to Use,Incumbent
 "SEVERIN, Toni ",ACT,2017,Christchurch East,NA,NA,0.003622813,FALSE
 "MATHERS, Mojo ",Green Party,2017,Rangitata,NA,NA,0.10132976,FALSE
 "PURCHAS, Sam",ACT,2017,Dunedin North,NA,NA,NA,FALSE
@@ -54,6 +54,17 @@ Candidate,Party,Year,Electorate,Candidate.Vote,Party.Vote.Electorate,Vote.to.Use
 "KRONFELD, Tim",ACT,2017,Upper Harbour,NA,NA,0.01690896,FALSE
 "GREENSLADE, Roger",ACT,2017,Wairarapa,NA,NA,0.002437043,FALSE
 "ANDERSON, Colin",ACT,2017,Whanganui,NA,NA,0.007237513,FALSE
+"BAKER, Leighton ",Conservative Party,2017,Christchurch East,NA,NA,0.040202041,FALSE
+"ASHTON, Lachie ",Conservative Party,2017,Clutha-Southland,NA,NA,0.041730436,FALSE
+"FRAUENSTEIN, Martin",Conservative Party,2017,Ilam,NA,NA,0.03403599,FALSE
+"IKILEI, Elliot Ewen Pasione ",Conservative Party,2017,Manurewa,NA,NA,0.021713552,FALSE
+"JOHNSON, Jeffrey ",Conservative Party,2017,Mt Albert,NA,NA,0.01467852,FALSE
+"DAVIE, Paul ",Conservative Party,2017,New Lynn,NA,NA,0.03906331,FALSE
+"TAYLOR, Melanie",Conservative Party,2017,Northland,NA,NA,0.044849985,FALSE
+"LARKINS, Roger",Conservative Party,2017,Port Hills,NA,NA,0.016046607,FALSE
+"WELSH, Bruce ",Conservative Party,2017,Rongotai,NA,NA,0.015263266,FALSE
+"PRICE, Benjamin ",Conservative Party,2017,Waimakariri,NA,NA,0.023014257,FALSE
+"BROSNAN, Chris",Conservative Party,2017,Wigram,NA,NA,0.028565514,FALSE
 "ROCHE, Denise",Green Party,2017,Auckland Central,NA,NA,0.0763,FALSE
 "SWEET, Cathy",Green Party,2017,Christchurch East,NA,NA,0.10132976,FALSE
 "GOLDSMITH, Rachael ",Green Party,2017,Clutha-Southland,NA,NA,0.071217223,FALSE

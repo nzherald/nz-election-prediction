@@ -1,4 +1,4 @@
-Pollster,Party,Estimate,Std Error,Baseline,Base Std Error
+Pollster,Party,Estimate,StdE,Baseline,BaseStdE
 Colmar Brunton,Labour,-0.000343594,0.004336273,0,0
 Digipoll,Labour,0.005267711,0.00598666,-0.000343594,0.004336273
 Ipsos,Labour,-0.01875142,0.008216543,-0.000343594,0.004336273

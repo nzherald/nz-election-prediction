@@ -1,4 +1,4 @@
-Candidate,Party,Year,Electorate,Candidate Vote,Party Vote Electorate,Vote to Use,Candidate Previous Vote,Previous Candidate Vote electorate,Same Candidate,Same Electorate,Same Party,Incumbent,No Candidate Run Last Election,PollAve,TWts
+Candidate,Party,Year,Electorate,Candidate.Vote,Party.Vote.Electorate,Vote.to.Use,Candidate Previous Vote,Previous Candidate Vote electorate,Same Candidate,Same Electorate,Same Party,Incumbent,No Candidate Run Last Election,PollAve,TWts
 "MAHUTA, Nanaia",Labour Party,2005,Hauraki-Waikato,0.544617408,0.5568,0.489382239,0.489382239,0.489382239,TRUE,TRUE,TRUE,TRUE,FALSE,0.493839981,13.92728274
 "MAHUTA, Nanaia",Labour Party,2008,Hauraki-Waikato,0.524965252,0.5255,0.544617408,0.544617408,NA,NA,FALSE,TRUE,TRUE,TRUE,0.510140274,29.58315379
 "MAHUTA, Nanaia",Labour Party,2011,Hauraki-Waikato,0.583717358,0.4611,0.524965252,0.524965252,0.524965252,TRUE,TRUE,TRUE,TRUE,FALSE,0.588,3.00927497

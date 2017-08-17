@@ -1,4 +1,4 @@
-Candidate,Party,Year,Electorate,Candidate Vote,Party Vote Electorate,Vote to Use,Candidate Previous Vote,Previous Candidate Vote electorate,Same Candidate,Same Electorate,Same Party,Incumbent,No Candidate Run Last Election,Mixer
+Candidate,Party,Year,Electorate,Candidate.Vote,Party.Vote.Electorate,Vote.to.Use,Candidate Previous Vote,Previous Candidate Vote electorate,Same Candidate,Same Electorate,Same Party,Incumbent,No Candidate Run Last Election,Mixer
 "STEENEVELD, Mike",ACT,1999,Albany,0.070787637,0.1228,NA,0.034837855,0.052721532,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE
 "McCONACHY, Heather Ann",Alliance,1999,Albany,0.11069732,0.0571,0.133860549,0.133860549,0.133860549,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE
 "McCULLY, Murray",National Party,1999,Albany,0.401765292,0.3941,0.510964341,0.510964341,0.510964341,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE
