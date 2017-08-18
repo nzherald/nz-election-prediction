@@ -143,10 +143,10 @@ AdjustedAverage <- function(NatE, Design, WtAve, Polls, NatECovar, CoVar, TrendA
   if (UsePollsWithin100Days) {
     Support$Wt.Ave <- Support$Wt.Ave + TrendAdj
     Support$Wt.Ave <- pmin(Support$Wt.Ave,0)
-    Support <- mutate(Support, `Nom SD` = sqrt(exp(Wt.Ave)*(1-exp(Wt.Ave))/(log(dim(Polls)[1]+1)*1000)))
+    Support <- mutate(Support, NomSD = sqrt(exp(Wt.Ave)*(1-exp(Wt.Ave))/(log(dim(Polls)[1]+1)*1000)))
   } else {
     Support$Wt.Ave = pmin(TrendAdj,0)
-    Support <- mutate(Support, `Nom SD` = sqrt(exp(Wt.Ave)*(1-exp(Wt.Ave))/(log(3)*1000)))
+    Support <- mutate(Support, NomSD = sqrt(exp(Wt.Ave)*(1-exp(Wt.Ave))/(log(3)*1000)))
   }
   Support <- mutate(Support, NomSD = sqrt(exp(Wt.Ave)*(1-exp(Wt.Ave))/(log(dim(Polls)[1]+1)*1000)))
   Support <- cbind(Support, DESim = sqrt(Design$DESim) )
