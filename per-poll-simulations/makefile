@@ -1,4 +1,7 @@
-polls := 0060-colmar-brunton \
+polls := \
+	0037-colmar-brunton \
+	0045-reid-research \
+	0060-colmar-brunton \
 	0060-reid-research \
 	0082-colmar-brunton \
 	0110-reid-research \
