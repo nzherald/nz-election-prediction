@@ -29,6 +29,6 @@ latest: $(latest)/Simulated-PV.csv
 all-polls: $(addsuffix /Simulated-PV.csv,$(polls))
 
 %/Simulated-PV.csv: common/Election-Simulation-pre-ME-Polls.R %/config.R %/PollsForGam.csv
-	cd $* && Rscript ../$^
+	cd $* && Rscript ../$^ 2>error.txt
 
 
