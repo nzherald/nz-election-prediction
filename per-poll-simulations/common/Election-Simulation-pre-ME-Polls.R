@@ -232,16 +232,7 @@ CandPredict <- function(Candidates, PartyVote, CandCovar, OhariuCovar){
   Candidates <- arrange(Candidates, Electorate, Party)
   PartyVote <- semi_join(PartyVote, Candidates, by = c("Electorate", "Party"))
   Candidates$Party.Vote.Electorate <- PartyVote$Pred 
-  
-  Ohariu17 <- filter(Candidates, Electorate == "Ohariu")
-  Candidates <- setdiff(Candidates, Ohariu17)
-  
-  Ohariu17 <- mutate(Ohariu17, Muu = predict.glm(Ohariu.fit, Ohariu17))
-  Ohariu17 <- mutate(Ohariu17, SE = predict.glm(Ohariu.fit, Ohariu17, se.fit = TRUE)$se.fit)
-  OhariuCovar <- filter(OhariuCovar, Party %in% Ohariu17$Party)
-  OhariuCovar <- as.matrix(OhariuCovar[,which(names(OhariuCovar)%in%Ohariu17$Party)])
-  Ohariu17 <- mutate(Ohariu17, Pred = diag(rmvnorm(dim(Ohariu17)[1], mean = Muu, sigma = SE%*%t(SE)*cov2cor(OhariuCovar), method = "svd")))
-  
+ 
   Epsom17 <- filter(Candidates, Electorate == "Epsom")
   Candidates <- setdiff(Candidates, Epsom17)
   
@@ -273,12 +264,18 @@ CandPredict <- function(Candidates, PartyVote, CandCovar, OhariuCovar){
     ElecCovar <- filter(CandCovar, Party %in% ElecPred$Party)
     ElecCovar <- as.matrix(ElecCovar[,which(names(ElecCovar)%in%ElecCovar$Party)])
     ElecPred <- mutate(ElecPred, Pred = diag(rmvnorm(dim(ElecPred)[1], Muu, as.matrix(forceSymmetric(SE%*%t(SE)*cov2cor(ElecCovar))), method = "svd")))
+    ElecPred$Pred <- exp(ElecPred$Pred)
+    if(sum(ElecPred$Pred)>1){
+      ElecPred$Pred <- ElecPred$Pred/sum(ElecPred$Pred)
+      } else {
+      if(sum(ElecPred$Pred)<0.95){
+      ElecPred$Pred <- 0.95*ElecPred$Pred/sum(ElecPred$Pred)
+        }
+    }
     Candidates$Pred[i:(i+dim(ElecPred)[1]-1)] <- ElecPred$Pred
     i = i+dim(ElecPred)[1]
     j = j+1
   }
-  Candidates <- rbind(Candidates, Ohariu17)
-  Candidates <- mutate(Candidates, Pred = exp(Pred))
   Candidates <- arrange(Candidates, Electorate, Party)
   assign("CandSim", Candidates, envir = globalenv())
 }
@@ -517,8 +514,14 @@ MECProject <- function(Cand, WtAve, Covar, Design, PartyVote, NatE, NatECovar){
     ElecPred <- filter(Candsim, Electorate == Electorate_List[i])
     ElecCovar <- filter(Covar, Party %in% ElecPred$Party)
     ElecCovar <- as.matrix(ElecCovar[,which(names(ElecCovar)%in%ElecCovar$Party)])
-    ElecPred <- mutate(ElecPred, Pred1 = exp(diag(rmvnorm(dim(ElecPred)[1], muuPred, se%*%t(se)*cov2cor(ElecCovar), method = "svd"))))
-    ElecPred$Pred1 <- ElecPred$Pred1/sum(ElecPred$Pred1)
+    ElecPred <- mutate(ElecPred, Pred = exp(diag(rmvnorm(dim(ElecPred)[1], muuPred, se%*%t(se)*cov2cor(ElecCovar), method = "svd"))))
+    if(sum(ElecPred$Pred)>1){
+      ElecPred$Pred <- ElecPred$Pred/sum(ElecPred$Pred)
+      } else{
+      if(sum(ElecPred$Pred)<0.95){
+        ElecPred$Pred <- 0.95*ElecPred$Pred/sum(ElecPred$Pred)
+      }
+    }
     Candsim$Pred[k:(k+dim(ElecPred)[1]-1)] <- ElecPred$Pred1
     k = k+dim(ElecPred)[1]
     i = i+1
@@ -548,8 +551,14 @@ MECProjectNoPolls <- function(Cand, Covar, PartyVote){
     ElecPred <- filter(Candsim, Electorate == Electorate_List[i])
     ElecCovar <- filter(Covar, Party %in% ElecPred$Party)
     ElecCovar <- as.matrix(ElecCovar[,which(names(ElecCovar)%in%ElecCovar$Party)])
-    ElecPred <- mutate(ElecPred, Pred1 = exp(diag(rmvnorm(dim(ElecPred)[1], muuPred, se%*%t(se)*cov2cor(ElecCovar), method = "svd"))))
-    ElecPred$Pred1 <- ElecPred$Pred1/sum(ElecPred$Pred1)
+    ElecPred <- mutate(ElecPred, Pred = exp(diag(rmvnorm(dim(ElecPred)[1], muuPred, se%*%t(se)*cov2cor(ElecCovar), method = "svd"))))
+   if(sum(ElecPred$Pred)>1){
+      ElecPred$Pred <- ElecPred$Pred/sum(ElecPred$Pred)
+      } else{
+      if(sum(ElecPred$Pred)<0.95){
+        ElecPred$Pred <- 0.95*ElecPred$Pred/sum(ElecPred$Pred)
+      }
+    }
     Candsim$Pred[k:(k+dim(ElecPred)[1]-1)] <- ElecPred$Pred1
     k = k+dim(ElecPred)[1]
     i = i+1
