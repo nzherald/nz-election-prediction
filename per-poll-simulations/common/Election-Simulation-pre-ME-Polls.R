@@ -249,7 +249,8 @@ CandPredict <- function(Candidates, PartyVote, CandCovar, OhariuCovar){
   FirstTime17 <- mutate(FirstTime17, SE = predict.glm(FirstTimers.fit, FirstTime17, se.fit = TRUE)$se.fit)
   
   Candidates <- mutate(Candidates, Muu = predict.glm(Candidate.fit, Candidates))
-  Candidates <- mutate(Candidates, SE = predict.glm(Candidate.fit, Candidates, se.fit = TRUE)$se.fit)
+  Candidates <- mutate(Candidates, SE = sqrt(predict.glm(Candidate.fit, Candidates, se.fit = TRUE)$se.fit^2+predict.glm(Candidate.fit, Candidates, se.fit = TRUE)$residual.scale^2))
+
   
   Epsom17 <- Epsom17[,-c(9:10)]
   Candidates <- rbind(Candidates, Epsom17, FirstTime17)
