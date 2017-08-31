@@ -36,7 +36,7 @@ Candidate,Party,Year,Electorate,Candidate.Vote,Party.Vote.Electorate,Vote.to.Use
 "HAWKINS, Stuart",ACT,2017,Waimakariri,NA,NA,NA,FALSE
 "GREENSLADE, Roger",ACT,2017,Wairarapa,NA,NA,0.002437043,FALSE
 "WARREN, Michael",ACT,2017,Wellington Central,NA,NA,NA,FALSE
-"MARKLAND, Zeb",ACT,2017,West Coast Tasman,NA,NA,NA,FALSE
+"MARKLAND, Zeb",ACT,2017,West Coast-Tasman,NA,NA,NA,FALSE
 "DAVIDSON, Alan",ACT,2017,Whanganui,NA,NA,0.007237513,FALSE
 "GRIEVE, Robin",ACT,2017,Whangarei,NA,NA,0.007862759,FALSE
 "KNIGHTS, Ruth",ACT,2017,Wigram,NA,NA,0.010763817,FALSE
@@ -282,7 +282,7 @@ Candidate,Party,Year,Electorate,Candidate.Vote,Party.Vote.Electorate,Vote.to.Use
 "MARK, Ron",New Zealand First Party,2017,Wairarapa,NA,NA,0.233549959,FALSE
 "FAMILTON, Alexander",New Zealand First Party,2017,Waitaki,NA,NA,NA,FALSE
 "FOSTER, Andy",New Zealand First Party,2017,Wellington Central,NA,NA,0.015210689,FALSE
-"FARRELLY, Jackie",New Zealand First Party,2017,West Coast Tasman,NA,NA,NA,FALSE
+"FARRELLY, Jackie",New Zealand First Party,2017,West Coast-Tasman,NA,NA,NA,FALSE
 "SKIPWORTH, Reginald Herbert",New Zealand First Party,2017,Whanganui,NA,NA,NA,FALSE
 "JONES, Shane",New Zealand First Party,2017,Whangarei,NA,NA,0.081384663,FALSE
 "APANUI, Tane John",New Zealand First Party,2017,Wigram,NA,NA,NA,FALSE
