@@ -522,7 +522,7 @@ MECProject <- function(Cand, WtAve, Covar, Design, PartyVote, NatE, NatECovar){
         ElecPred$Pred <- 0.95*ElecPred$Pred/sum(ElecPred$Pred)
       }
     }
-    Candsim$Pred[k:(k+dim(ElecPred)[1]-1)] <- ElecPred$Pred1
+    Candsim$Pred[k:(k+dim(ElecPred)[1]-1)] <- ElecPred$Pred
     k = k+dim(ElecPred)[1]
     i = i+1
   }
@@ -559,7 +559,7 @@ MECProjectNoPolls <- function(Cand, Covar, PartyVote){
         ElecPred$Pred <- 0.95*ElecPred$Pred/sum(ElecPred$Pred)
       }
     }
-    Candsim$Pred[k:(k+dim(ElecPred)[1]-1)] <- ElecPred$Pred1
+    Candsim$Pred[k:(k+dim(ElecPred)[1]-1)] <- ElecPred$Pred
     k = k+dim(ElecPred)[1]
     i = i+1
   }
