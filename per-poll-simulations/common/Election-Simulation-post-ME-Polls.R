@@ -564,10 +564,12 @@ MECProjectNoPolls <- function(Cand, Covar, PartyVote){
 
 # Admin Functions ---------------------------------------------------------
 
-SaintLague <- function(PartyVote){
+SaintLague <- function(PartyVote, ElectorateSeats){
   SL <- PartyVote
+  ElecWon <- filter(ElectorateSeats, Seats>0)
+  SL <- filter(SL, Adj.Average>=0.05|Party %in% ElecWon$Party)
   i = 1
-  while(i<=199){
+  while(i<=119){
     SLv <- SL$Adj.Average/(2*i+1)
     SL <- cbind(SL, SLv)
     i = i+1
@@ -575,7 +577,12 @@ SaintLague <- function(PartyVote){
   SLs <- SL[,-c(1:2)]
   SLv <- as.vector(as.matrix(SLs))
   SLs <- SLs >= sort(SLv, partial = length(SLv)-119)[length(SLv)-119]
-  Seats <- data.frame(Party = PartyVote$Party, Seats = base::rowSums(SLs))
+  Seats <- data.frame(Party = PartyVote$Party, Seats = 0)
+  i = 1
+  while(i<=dim(SLs)[1]){
+    Seats$Seats[Seats$Party==SL$Party[i]] <- rowSums(SLs)[i]
+    i = i+1
+  }
   assign("TotalSeatsSim", Seats, envir = globalenv())
 }
 
@@ -652,8 +659,8 @@ while(NSim < MaxSims+1){
   MECWtAve(Polls = MECPolls.df, Cand = 0MECandidate17.df, param = c(23.07,0.1547))
   MECProject(Cand = MECandidate17.df, WtAve = MECWtAvesim, Covar = MECCovar.df, Design = MEDECsim, PartyVote = MEPVSim, NatE = MECNatESim, NatECovar = MENateCandCoVar.df)
   
-  SaintLague(PartyVote = AdjustedPartyVote.df)
   ElectorateSeats(Candidate = CandSim, Seats = StoreCand1.df, MaoriCand = MECandSim, MSeats = StoreMECand1.df, TSeats = StoreElecSeats1.df)
+  SaintLague(PartyVote = AdjustedPartyVote.df, ElectorateSeats = ElecSeatsSim)
   ListSeats(TotalSeats = TotalSeatsSim, ElectorateSeats = ElecSeatsSim)
   TotalSeats(ElectorateSeats = ElecSeatsSim, ListSeats = ListSeatsSim)
   
