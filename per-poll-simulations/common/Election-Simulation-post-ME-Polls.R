@@ -299,7 +299,7 @@ MEPVWtAve <- function(Polls, Results, param){
   Results <- arrange(Results, Party, Electorate)
   Types <- rep(0,7)
   i = 1
-  Electorate_List <- unique(filter(Results, Electorate != "Full")$Electorate)
+  Electorate_List <- list("Hauraki-Waikato","Ikaroa Rawhiti","Tamaki Makaurau","Te Tai Hauauru","Te Tai Tokerau","Te Tai Tonga","Waiariki")
   while(i<=7){
     Types[i] <- dim(filter(Polls, Electorate == Electorate_List[i]))[1]
     i = i+1
@@ -310,7 +310,7 @@ MEPVWtAve <- function(Polls, Results, param){
   i = 1
   while(i<=7){
     if(Results$Type[i] > 0){
-        c1wts[i] <- sum(log(filter(Polls, Electorate == unique(Results$Electorate)[i])$Size)/log(filter(Polls, Electorate == unique(Results$Electorate)[i])$`Days Before`))
+        c1wts[i] <- sum(log(filter(Polls, Electorate == Electorate_List[i])$Size)/log(filter(Polls, Electorate == Electorate_List[i])$Days.Before))
     }
     i = i+1
   }
@@ -319,61 +319,49 @@ MEPVWtAve <- function(Polls, Results, param){
   c2wts = rep(0,7)
   i = 1
   while(i<=7){
-    c2wts[i] <- if_else(dim(filter(Polls, Electorate!=unique(Results$Electorate)[i]))[1]==0,0,log(dim(filter(Polls, Electorate!=unique(Results$Electorate)[i]))[1]))
+    c2wts[i] <- if_else(dim(filter(Polls, Electorate!=Electorate_List[i]))[1]==0,0,log(dim(filter(Polls, Electorate!=Electorate_List[i]))[1]+1))
     i = i+1
   }
   Results <- cbind(Results, c2wt = c2wts)
   
   # Now spreading Polls
-  Polls <- gather(Polls, Party, `Party Vote`, 7:c(dim(Polls)[2]))
+  Polls <- gather(Polls, Party, Party.Vote, 7:c(dim(Polls)[2]))
   i = 1
-  Results <- mutate(Results, `Weight Ave` = 0)
+  Results <- mutate(Results, Weight.Ave = 0)
   while(i<=dim(Results)[1]){
     if(Results$Type[i]>0){
       if(Results$Type[i]==1){
-        Results$`Weight Ave`[i] = as.numeric(filter(Polls, Party == Results$Party[i] & Electorate == Results$Electorate[i])$`Party Vote`)
+        Results$Weight.Ave[i] = as.numeric(filter(Polls, Party == Results$Party[i] & Electorate == Results$Electorate[i])$Party.Vote)
       } else{
         # Assuming only max two polls - if three or more polls will need to edit
-        Mult <- log(filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$`Days Before`[1]-filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$`Days Before`[2])*log(filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$`Size`[2])/log(filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$`Size`[1])
-        Results$`Weight Ave`[i] = param[3]*Mult*filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$`Party Vote`[2]+(1-param[3]*Mult)*filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$`Party Vote`[1]
+        Mult <- log(filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$Days.Before[1]-filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$Days.Before[2])*log(filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$`Size`[2])/log(filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$`Size`[1])
+        Results$Weight.Ave[i] = param[3]*Mult*filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$Party.Vote[2]+(1-param[3]*Mult)*filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$Party.Vote[1]
       }
     }
     i = i +1
   }
   
-  # This is for calculating weighted average of other electorates
-  Polls <- mutate(Polls, scaleF = log(Size)/log(`Days Before`))
-  Polls <- mutate(Polls, nonscalePVO = `Party Vote`*scaleF)
+  Polls <- mutate(Polls, scaleF = log(Size)/log(Days.Before))
+  Polls <- mutate(Polls, nonscalePVO = Party.Vote*scaleF)
   
   Polls$scaleF[Polls$Electorate == "full"] <- Polls$scaleF[Polls$Electorate == "full"]*param[4]
   Polls$nonscalePVO[Polls$Electorate == "full"] <- Polls$nonscalePVO[Polls$Electorate == "full"]*param[4]
   
-  Results <- mutate(Results, `Weight Ave Other` = 0)
+  Results <- mutate(Results, Weight.Ave.Other = 0)
   i = 1
   while(i<=dim(Results)[1]){
-    Results$`Weight Ave Other`[i] = sum(filter(Polls, Electorate != Results$Electorate[i]& Party == Results$Party[i])$nonscalePVO)/sum(filter(Polls, Electorate != Results$Electorate[i]& Party == Results$Party[i])$scaleF)
+    Results$Weight.Ave.Other[i] = sum(filter(Polls, Electorate != Results$Electorate[i]& Party == Results$Party[i])$nonscalePVO)/sum(filter(Polls, Electorate != Results$Electorate[i]& Party == Results$Party[i])$scaleF)
     i = i+1
   }
-  Results <- mutate(Results, Pred = param[1]*c1wt/(c1wt+c2wt)*`Weight Ave` + param[2]*c2wt/(c1wt+c2wt)*`Weight Ave Other` + (1-param[1]*c1wt/(c1wt+c2wt)-param[2]*c2wt/(c1wt+c2wt))*`Prev Elec`)
+  Results <- mutate(Results, FWtAve = param[1]*c1wt/(c1wt+c2wt)*Weight.Ave + param[2]*c2wt/(c1wt+c2wt)*Weight.Ave.Other + (1-param[1]*c1wt/(c1wt+c2wt)-param[2]*c2wt/(c1wt+c2wt))*`Prev Elec`)
   
   Results <- filter(Results, Party != "Undecided/Not Stated")
-  
-  i = 1
-  j = 1
-  k = 1
-  while(i<=7){
-    j = 1
-      Elec <- filter(Results, Electorate == unique(Results$Electorate)[i])
-      Elec$Pred[which(Elec$Pred<0)] <- 0
-      Pvt <- sum(Elec$Pred)
-      Elec$Pred <- Elec$Pred/Pvt
-      Results$Pred[k:(k+dim(Elec)[1]-1)] <- Elec$Pred
-      k = k+dim(Elec)[1]
-    i = i+1
-  }
-  
+  Results$FWtAve[which(Results$FWtAve<0)] <- 0
+  Results <- Results %>% group_by(Electorate) %>% mutate(FWtAve = FWtAve/sum(FWtAve))
+
   assign("MEPVWtAvesim", Results, envir = globalenv())
 }
+
 
 MEPVfunc <- function(WtAve, Polls, NatE, DE, NatECovar){
   WtAve <- arrange(WtAve, Electorate, Party)
@@ -447,9 +435,11 @@ MENatErrorC <- function(MECNatE){
 }
 
 MECWtAve <- function(Polls, Cand, param){
-  Polls <- gather(Polls, Party, `Cand Vote`, 8:20)
-  Polls <- mutate(Polls, WT = log(param[1]*Size)/(log(param[2]*`Days Before`)))
-  Polls <- mutate(Polls, WTCV = WT*`Cand Vote`)
+  Polls <- gather(Polls, Party, Candidate.Vote, 8:20)
+  Polls <- filter(Polls, !is.na(Candidate.Vote))
+  Polls$Candidate.Vote <- as.numeric(Polls$Candidate.Vote)
+  Polls <- mutate(Polls, WT = log(param[1]*Size)/(log(param[2]*Days.Before)))
+  Polls <- mutate(Polls, WTCV = WT*Candidate.Vote)
   Cand <- mutate(Cand, WtAve = 0)
   Polls <- arrange(Polls, Electorate, Year, Party)
   Cand <- arrange(Cand, Electorate, Year, Party)
@@ -465,7 +455,7 @@ MECProject <- function(Cand, WtAve, Covar, Design, PartyVote, NatE, NatECovar){
   PartyVote <- semi_join(PartyVote, Cand,  by = c("Party", "Electorate"))
   PartyVote <- arrange(PartyVote, Electorate, Party)
   Cand <- arrange(Cand, Electorate, Party)
-  Cand$`Party Vote Electorate` <- PartyVote$Pred
+  Cand$Party.Vote.Electorate <- PartyVote$Pred
   Cand <- cbind(Cand, WeightAve = WtAve$WtAve)
   Cand <- mutate(Cand, DE = 0)
   i = 1
@@ -478,10 +468,21 @@ MECProject <- function(Cand, WtAve, Covar, Design, PartyVote, NatE, NatECovar){
   SD <- c(0,0,0,0)
   i = 1
   while(i<=length(unique(Cand$Party))){
-    SD[i] <- base::mean(!is.na(filter(Cand, Party == unique(Cand$Party)[i])$SD))
+    SD[i] <- base::mean((filter(Cand, Party == unique(Cand$Party)[i] & !is.na(SD))$SD))
     i = i+1
   }
-  NatE <- mutate(NatE, NatESim = diag(rmvnorm(dim(NatE)[1], MuuNatESim, SD%*%t(SD)*cov2cor(as.matrix(NatECovar[,-1])), method = "svd")))
+  if(is.na(SD[4])){
+    SD <- SD[1:3]
+    NatECovar <- NatECovar[-3,-4]
+    ManaStore <- NatE[3,]
+    ManaStore <- mutate(ManaStore, NatESim = 0)
+    NatE <- NatE[-3,]
+    NatE <- mutate(NatE, NatESim = diag(rmvnorm(dim(NatE)[1], MuuNatESim, SD%*%t(SD)*cov2cor(as.matrix(NatECovar[,-1])), method = "svd")))
+    NatE <- rbind(NatE, ManaStore)
+  } else {
+    NatE <- mutate(NatE, NatESim = diag(rmvnorm(dim(NatE)[1], MuuNatESim, SD%*%t(SD)*cov2cor(as.matrix(NatECovar[,-1])), method = "svd")))
+  }
+  
   i = 1
   while(i<=dim(Cand)[1]){
     Cand$PollAve[i] <- Cand$WeightAve[i] - filter(NatE, Party == Cand$Party[i])$NatESim
@@ -491,20 +492,20 @@ MECProject <- function(Cand, WtAve, Covar, Design, PartyVote, NatE, NatECovar){
     i = i+1
   }
   
-  CandFT <- filter(Cand, is.na(`Vote to Use`))
+  CandFT <- filter(Cand, is.na(Vote.to.Use))
   CandP <- setdiff(Cand, CandFT)
   CandFTN <- filter(CandFT, is.na(PollAve))
   CandPN <- filter(CandP, is.na(PollAve))
   CandFT <- setdiff(CandFT, CandFTN)
   CandP <- setdiff(CandP, CandPN)
   CandFT <- mutate(CandFT, muuPred = predict.glm(MEYESFT.fit, CandFT))
-  CandFT <- mutate(CandFT, se = predict.glm(MEYESFT.fit, CandFT, se.fit = TRUE)$se.fit)
+  CandFT <- mutate(CandFT, se = sqrt(predict.glm(MEYESFT.fit, CandFT, se.fit = TRUE)$se.fit^2+predict.glm(MEYESFT.fit, CandFT, se.fit = TRUE)$residual.scale^2))
   CandP <- mutate(CandP, muuPred  = predict.glm(MEYES.fit, CandP))
-  CandP <- mutate(CandP, se  = predict.glm(MEYES.fit, CandP, se.fit = TRUE)$se.fit)
+  CandP <- mutate(CandP, se  = sqrt(predict.glm(MEYES.fit, CandP, se.fit = TRUE)$se.fit^2+predict.glm(MEYES.fit, CandFT, se.fit = TRUE)$residual.scale^2))
   CandFTN <- mutate(CandFTN, muuPred = predict.glm(NoPollFT.fit, CandFTN))
-  CandFTN <- mutate(CandFTN, se = predict.glm(NoPollFT.fit, CandFTN, se.fit = TRUE)$se.fit)
+  CandFTN <- mutate(CandFTN, se = sqrt(predict.glm(NoPollFT.fit, CandFTN, se.fit = TRUE)$se.fit^2+predict.glm(NoPollFT.fit, CandFT, se.fit = TRUE)$residual.scale^2))
   CandPN <- mutate(CandPN, muuPred  = predict.glm(NoPoll.fit1, CandPN))
-  CandPN <- mutate(CandPN, se  = predict.glm(NoPoll.fit1, CandPN, se.fit = TRUE)$se.fit)
+  CandPN <- mutate(CandPN, se  = sqrt(predict.glm(NoPoll.fit1, CandPN, se.fit = TRUE)$se.fit^2+predict.glm(NoPoll.fit1, CandFT, se.fit = TRUE)$residual.scale^2))
   Candsim <- rbind(CandP, CandFT, CandPN, CandFTN)
   Candsim <- mutate(Candsim, Pred = 0)
   Candsim <- arrange(Candsim, Electorate, Party)
@@ -515,15 +516,9 @@ MECProject <- function(Cand, WtAve, Covar, Design, PartyVote, NatE, NatECovar){
     ElecPred <- filter(Candsim, Electorate == Electorate_List[i])
     ElecCovar <- filter(Covar, Party %in% ElecPred$Party)
     ElecCovar <- as.matrix(ElecCovar[,which(names(ElecCovar)%in%ElecCovar$Party)])
-    ElecPred <- mutate(ElecPred, Pred = exp(diag(rmvnorm(dim(ElecPred)[1], muuPred, se%*%t(se)*cov2cor(ElecCovar), method = "svd"))))
-    if(sum(ElecPred$Pred)>1){
-      ElecPred$Pred <- ElecPred$Pred/sum(ElecPred$Pred)
-      } else{
-      if(sum(ElecPred$Pred)<0.95){
-        ElecPred$Pred <- 0.95*ElecPred$Pred/sum(ElecPred$Pred)
-      }
-    }
-    Candsim$Pred[k:(k+dim(ElecPred)[1]-1)] <- ElecPred$Pred
+    ElecPred <- mutate(ElecPred, Pred1 = exp(diag(rmvnorm(dim(ElecPred)[1], muuPred, se%*%t(se)*cov2cor(ElecCovar), method = "svd"))))
+    ElecPred$Pred1 <- ElecPred$Pred1/sum(ElecPred$Pred1)
+    Candsim$Pred[k:(k+dim(ElecPred)[1]-1)] <- ElecPred$Pred1
     k = k+dim(ElecPred)[1]
     i = i+1
   }
@@ -649,15 +644,13 @@ while(NSim < MaxSims+1){
   
   MEDEPV(Design = MEDesignE.df)
   MENatErrorPV(MEPVNatE = MENatE.df)
-  #MEPVWtAve(Polls = MEPartyPolls.df, Results = MEResults.df, param = MEparam)
-  #MEPVfunc(WtAve = MEPVPrePolls.df, Polls =  MEPartyPolls.df, NatE = MEPVNatESim, DE = MEDEPVsim, NatECovar = MENateCoVar.df)
-  MEPVfuncNoPolls(WtAve = MEPVPrePolls.df, Polls =  MEPartyPolls.df, NatE = MEPVNatESim, DE = MEDEPVsim, NatECovar = MENateCoVar.df)
-  
-  #MEDEC(Design = MEDesignECand.df)
-  #MENatErrorC(MECNatE = MENatECand.df)
-  #MECWtAve(Polls = MECPolls.df, Cand = 0MECandidate17.df, param = c(23.07,0.1547))
-  #MECProject(Cand = MECandidate17.df, WtAve = MECWtAvesim, Covar = MECCovar.df, Design = MEDECsim, PartyVote = MEPVSim, NatE = MECNatESim, NatECovar = MENateCandCoVar.df)
-  MECProjectNoPolls(Cand = MECandidate17.df, PartyVote = MEPVSim, Covar = MECCovar.df)
+  MEPVWtAve(Polls = MEPartyPolls.df, Results = MEResults.df, param = MEparam)
+  MEPVfunc(WtAve = MEPVPrePolls.df, Polls =  MEPartyPolls.df, NatE = MEPVNatESim, DE = MEDEPVsim, NatECovar = MENateCoVar.df)
+    
+  MEDEC(Design = MEDesignECand.df)
+  MENatErrorC(MECNatE = MENatECand.df)
+  MECWtAve(Polls = MECPolls.df, Cand = 0MECandidate17.df, param = c(23.07,0.1547))
+  MECProject(Cand = MECandidate17.df, WtAve = MECWtAvesim, Covar = MECCovar.df, Design = MEDECsim, PartyVote = MEPVSim, NatE = MECNatESim, NatECovar = MENateCandCoVar.df)
   
   SaintLague(PartyVote = AdjustedPartyVote.df)
   ElectorateSeats(Candidate = CandSim, Seats = StoreCand1.df, MaoriCand = MECandSim, MSeats = StoreMECand1.df, TSeats = StoreElecSeats1.df)
