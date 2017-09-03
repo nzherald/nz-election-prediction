@@ -1,6 +1,6 @@
 polls := \
 	0023-reid-research \
-	0024-colmarb-brunton \
+	0024-colmar-brunton \
 	0037-colmar-brunton \
 	0045-reid-research \
 	0060-colmar-brunton \
@@ -28,9 +28,11 @@ latest := $(shell ls  | head -n1)
 
 latest: $(latest)/Simulated-PV.csv
 
-all-polls: $(addsuffix /Simulated-PV.csv,$(polls))
+all-polls: $(addsuffix /error.txt,$(polls))
 
 %/Simulated-PV.csv: common/Election-Simulation-pre-ME-Polls.R %/config.R %/PollsForGam.csv
-	cd $* && Rscript ../$^ 2>error.txt
+	cd $* && Rscript ../$^
 
+%/error.txt : common/Election-Simulation-pre-ME-Polls.R %/config.R %/PollsForGam.csv
+	cd $* && Rscript ../$^ 2>$@
 
