@@ -656,7 +656,7 @@ while(NSim < MaxSims+1){
     
   MEDEC(Design = MEDesignECand.df)
   MENatErrorC(MECNatE = MENatECand.df)
-  MECWtAve(Polls = MECPolls.df, Cand = 0MECandidate17.df, param = c(23.07,0.1547))
+  MECWtAve(Polls = MECPolls.df, Cand = MECandidate17.df, param = c(23.07,0.1547))
   MECProject(Cand = MECandidate17.df, WtAve = MECWtAvesim, Covar = MECCovar.df, Design = MEDECsim, PartyVote = MEPVSim, NatE = MECNatESim, NatECovar = MENateCandCoVar.df)
   
   ElectorateSeats(Candidate = CandSim, Seats = StoreCand1.df, MaoriCand = MECandSim, MSeats = StoreMECand1.df, TSeats = StoreElecSeats1.df)
