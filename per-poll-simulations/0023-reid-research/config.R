@@ -1,3 +1,3 @@
 
 MaxSims = 5000
-DaysTo = 24
+DaysTo = 23
