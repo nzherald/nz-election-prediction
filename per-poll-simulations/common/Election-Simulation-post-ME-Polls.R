@@ -229,7 +229,7 @@ Epsom.fit <- glm(Candidate.Vote~log(Party.Vote.Electorate)*(ACT+National)+log(Vo
 
 # Candidate Vote Functions ------------------------------------------------
 
-CandPredict <- function(Candidates, PartyVote, CandCovar, OhariuCovar){
+CandPredict <- function(Candidates, PartyVote, CandCovar, EpsomMuu, EpsomSD){
   Candidates <- arrange(Candidates, Electorate, Party)
   EpsomPartyVote <- filter(PartyVote, Electorate == "Epsom")$Pred
   PartyVote <- semi_join(PartyVote, Candidates, by = c("Electorate", "Party"))
@@ -376,14 +376,14 @@ MEPVfunc <- function(WtAve, Polls, NatE, DE, NatECovar){
   WtAve <- arrange(WtAve, Electorate, Party)
   WtAve <- filter(WtAve, Party != "Independent/Other")
   WtAve <- cbind(WtAve, MuuNatE = NatE$MuuNatESim)
-  WtAVe <- mutate(WtAve, Pred = 0)
+  WtAve <- mutate(WtAve, Pred = 0)
   i = 1
   while(i<=7){
     ElecPred <- WtAve[c((9*i-8):(9*i)),]
     ElecPred <- cbind(ElecPred, DE = DE$DesignSim)
-    ElecPred <- mutate(ElecPred, SD = DE*sqrt(Pred*(1-Pred)/(log(dim(Polls)[1]+1)*500)))
+    ElecPred <- mutate(ElecPred, SD = DE*sqrt(FWtAve*(1-FWtAve)/(log(dim(Polls)[1]+1)*500)))
     ElecPred <- mutate(ElecPred, NatESim = diag(rmvnorm(dim(ElecPred)[1], MuuNatE, SD%*%t(SD)*cov2cor(as.matrix(NatECovar[,-1])), method ="svd")))
-    ElecPred <- mutate(ElecPred, Pred = Pred-NatESim)
+    ElecPred <- mutate(ElecPred, Pred = FWtAve-NatESim)
     ElecPred[ElecPred$Pred<0,]$Pred <- runif(dim(ElecPred[ElecPred$Pred<0,])[1],0,0.005)
     ElecPred$Pred <- ElecPred$Pred/sum(ElecPred$Pred)
     WtAve$Pred[c((9*i-8):(9*i))] <- ElecPred$Pred
