@@ -37,7 +37,7 @@ Electorate17Data.df <- read_csv("../common/Electorate Data for STM FOR 17.csv")
 Party17.df <- read_csv("../common/Post Party for 17.csv")
 Candidate.df <- read_csv("../common/General Election Candidate Data for 14.csv") # This is used to create the glms
 Candidate17.df <- read_csv("../common/Candidate 17 DataFrame.csv")
-# MEPartyVote.df <- read_csv("ME Party Polling Data 17.csv")
+MEPartyVote.df <- read_csv("ME Party Polling Data 17.csv")
 DesignE.df <- read_csv("../common/Design Effects pred 17.csv")
 NatPollE.df <- read_csv("../common/Nat Error 17 pred.csv")
 NatECovar.df <- read_csv("../common/Nat Poll E CoVariance 17 Pred.csv")
@@ -72,7 +72,8 @@ StoreCandWin.df <- rbind(StoreCand.df, StoreMECand.df)
 StoreCand1.df <- StoreCand.df
 StoreMECand1.df <- StoreMECand.df
 StoreElecSeats1.df <- StoreElecSeats.df
-
+EpsomMuuMatrix <- as.matrix(read_csv("../common/Epsom Muu Split.csv"), nrow = 9, ncol = 6)
+EpsomSDMatrix <- as.matrix(read_csv("../common/Epsom SD Split.csv"), nrow = 9, ncol = 6)
 
 # Weighted Polling Average ------------------------------------------------
 
@@ -228,19 +229,17 @@ Epsom.fit <- glm(Candidate.Vote~log(Party.Vote.Electorate)*(ACT+National)+log(Vo
 
 # Candidate Vote Functions ------------------------------------------------
 
-CandPredict <- function(Candidates, PartyVote, CandCovar, OhariuCovar){
+CandPredict <- function(Candidates, PartyVote, CandCovar, EpsomMuu, EpsomSD){
   Candidates <- arrange(Candidates, Electorate, Party)
+  EpsomPartyVote <- filter(PartyVote, Electorate == "Epsom")$Pred
   PartyVote <- semi_join(PartyVote, Candidates, by = c("Electorate", "Party"))
   Candidates$Party.Vote.Electorate <- PartyVote$Pred 
  
   Epsom17 <- filter(Candidates, Electorate == "Epsom")
   Candidates <- setdiff(Candidates, Epsom17)
-  
-  Epsom17 <- mutate(Epsom17, ACT = c(TRUE, rep(FALSE, dim(Epsom17)[1]-1)))
-  Epsom17 <- mutate(Epsom17, National = c(FALSE))
-  Epsom17[Epsom17$Party=="National Party",10] <- TRUE
-  Epsom17 <- mutate(Epsom17, Muu = predict.glm(Epsom.fit, Epsom17))
-  Epsom17 <- mutate(Epsom17, SE = predict.glm(Epsom.fit, Epsom17, se.fit = TRUE)$se.fit)
+
+  Epsom17 <- mutate(Epsom17, Muu = 0)
+  Epsom17 <- mutate(Epsom17, SE = 0)
   
   FirstTime17 <- filter(Candidates, is.na(Vote.to.Use))
   Candidates <- setdiff(Candidates, FirstTime17)
@@ -251,9 +250,7 @@ CandPredict <- function(Candidates, PartyVote, CandCovar, OhariuCovar){
   Candidates <- mutate(Candidates, Muu = predict.glm(Candidate.fit, Candidates))
   Candidates <- mutate(Candidates, SE = sqrt(predict.glm(Candidate.fit, Candidates, se.fit = TRUE)$se.fit^2+predict.glm(Candidate.fit, Candidates, se.fit = TRUE)$residual.scale^2))
 
-  
-  Epsom17 <- Epsom17[,-c(9:10)]
-  Candidates <- rbind(Candidates, Epsom17, FirstTime17)
+  Candidates <- rbind(Candidates, FirstTime17)
   Candidates <- arrange(Candidates, Electorate, Party)
   
   Electorate_List <- list(unique(Candidates$Electorate))
@@ -277,6 +274,19 @@ CandPredict <- function(Candidates, PartyVote, CandCovar, OhariuCovar){
     i = i+dim(ElecPred)[1]
     j = j+1
   }
+  EpsomSimVar <- matrix(rt(54,3), nrow = 9, ncol = 6)
+  EpsomSimVar[EpsomSimVar<qt(0.01,3)] <- qt(0.01,3)
+  EpsomSimVar[EpsomSimVar>qt(0.99,3)] <- qt(0.99,3)
+  
+  EpsomSimVar <- EpsomSimVar*EpsomSD
+  EpsomSim <- EpsomMuu + EpsomSimVar
+  EpsomSim[EpsomSim<0] <- 0.0005
+  EpsomSim[EpsomSim>100] <- 100
+  EpsomSim <- EpsomSim/rowSums(EpsomSim)
+  EpsomPred <- EpsomPartyVote%*%EpsomSim
+  Epsom17 <- mutate(Epsom17, Pred = EpsomPred[1:5])
+  
+  Candidates <- rbind(Candidates, Epsom17)
   Candidates <- arrange(Candidates, Electorate, Party)
   assign("CandSim", Candidates, envir = globalenv())
 }
@@ -324,7 +334,6 @@ MEPVWtAve <- function(Polls, Results, param){
   }
   Results <- cbind(Results, c2wt = c2wts)
   
-  # Now spreading Polls
   Polls <- gather(Polls, Party, Party.Vote, 7:c(dim(Polls)[2]))
   i = 1
   Results <- mutate(Results, Weight.Ave = 0)
@@ -333,7 +342,7 @@ MEPVWtAve <- function(Polls, Results, param){
       if(Results$Type[i]==1){
         Results$Weight.Ave[i] = as.numeric(filter(Polls, Party == Results$Party[i] & Electorate == Results$Electorate[i])$Party.Vote)
       } else{
-        # Assuming only max two polls - if three or more polls will need to edit
+        
         Mult <- log(filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$Days.Before[1]-filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$Days.Before[2])*log(filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$`Size`[2])/log(filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$`Size`[1])
         Results$Weight.Ave[i] = param[3]*Mult*filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$Party.Vote[2]+(1-param[3]*Mult)*filter(Polls, Party== Results$Party[i] & Electorate == Results$Electorate[i])$Party.Vote[1]
       }
@@ -367,14 +376,14 @@ MEPVfunc <- function(WtAve, Polls, NatE, DE, NatECovar){
   WtAve <- arrange(WtAve, Electorate, Party)
   WtAve <- filter(WtAve, Party != "Independent/Other")
   WtAve <- cbind(WtAve, MuuNatE = NatE$MuuNatESim)
-  WtAVe <- mutate(WtAve, Pred = 0)
+  WtAve <- mutate(WtAve, Pred = 0)
   i = 1
   while(i<=7){
     ElecPred <- WtAve[c((9*i-8):(9*i)),]
     ElecPred <- cbind(ElecPred, DE = DE$DesignSim)
-    ElecPred <- mutate(ElecPred, SD = DE*sqrt(Pred*(1-Pred)/(log(dim(Polls)[1]+1)*500)))
+    ElecPred <- mutate(ElecPred, SD = DE*sqrt(FWtAve*(1-FWtAve)/(log(dim(Polls)[1]+1)*500)))
     ElecPred <- mutate(ElecPred, NatESim = diag(rmvnorm(dim(ElecPred)[1], MuuNatE, SD%*%t(SD)*cov2cor(as.matrix(NatECovar[,-1])), method ="svd")))
-    ElecPred <- mutate(ElecPred, Pred = Pred-NatESim)
+    ElecPred <- mutate(ElecPred, Pred = FWtAve-NatESim)
     ElecPred[ElecPred$Pred<0,]$Pred <- runif(dim(ElecPred[ElecPred$Pred<0,])[1],0,0.005)
     ElecPred$Pred <- ElecPred$Pred/sum(ElecPred$Pred)
     WtAve$Pred[c((9*i-8):(9*i))] <- ElecPred$Pred
@@ -647,8 +656,8 @@ while(NSim < MaxSims+1){
   TrendLineCalc(GEPolls = GEPollsSim.df)
   AdjustedAverage(NatE = NatPollE.df, Design = DesignSim.df, WtAve = WeightAveSim.df, Polls = GEPollsSim.df, NatECovar = NatECovar.df, CoVar = Covar.df, TrendAdj = TrendAdjSim)
   STM(param = c(0.321,0.1), Electorates = Electorate17Data.df, Parties = Party17.df,  Adj = AdjustedPartyVote.df)
-  CandPredict(Candidates = Candidate17.df, PartyVote = STMPreds, CandCovar = CandCovar.df, OhariuCovar = OhariuCovar.df)
-  
+   CandPredict(Candidates = Candidate17.df, PartyVote = STMPreds, CandCovar = CandCovar.df, EpsomMuu = EpsomMuuMatrix, EpsomSD = EpsomSDMatrix)
+
   MEDEPV(Design = MEDesignE.df)
   MENatErrorPV(MEPVNatE = MENatE.df)
   MEPVWtAve(Polls = MEPartyPolls.df, Results = MEResults.df, param = MEparam)
