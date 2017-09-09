@@ -37,7 +37,7 @@ Electorate17Data.df <- read_csv("../common/Electorate Data for STM FOR 17.csv")
 Party17.df <- read_csv("../common/Post Party for 17.csv")
 Candidate.df <- read_csv("../common/General Election Candidate Data for 14.csv") # This is used to create the glms
 Candidate17.df <- read_csv("../common/Candidate 17 DataFrame.csv")
-MEPartyVote.df <- read_csv("ME Party Polling Data 17.csv")
+MEPartyVote.df <- read_csv("../common/ME Party Polling Data 17.csv")
 DesignE.df <- read_csv("../common/Design Effects pred 17.csv")
 NatPollE.df <- read_csv("../common/Nat Error 17 pred.csv")
 NatECovar.df <- read_csv("../common/Nat Poll E CoVariance 17 Pred.csv")
