@@ -105,6 +105,7 @@ WeightAverage <- function(GEPolls){
   GEPolls <- filter(GEPolls, Pollster!= "Election result")
   GEPolls <- filter(GEPolls, `Release Days`<100)
   GEPolls <- mutate(GEPolls, RawWeight = exp(-log(2)*(`Days Before`-DaysTo)/(1.96+0.2*DaysTo)))
+  GEPolls$RawWeight[GEPolls$Pollster %in% c("Listener-Bauer", "Horizon Research")] <- GEPolls$RawWeight[GEPolls$Pollster %in% c("Listener-Bauer", "Horizon Research")]*0.5
   GEPolls <- mutate(GEPolls, Weight = RawWeight/sum(RawWeight))
   GEPolls[,4:12] <- as.data.frame(apply(GEPolls[,4:12],2,function(x) x*GEPolls[,14]))
   WeightAve <- data.frame(Party = colnames(GEPolls)[4:12], Wt.Ave = colSums(GEPolls[,c(4:12)]))
