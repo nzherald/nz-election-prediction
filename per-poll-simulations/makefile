@@ -1,4 +1,6 @@
 polls := \
+	0009-colmar-brunton \
+	0010-reid-research \
 	0016-colmar-brunton \
 	0023-reid-research \
 	0024-colmar-brunton \
